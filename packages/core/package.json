@@ -1,0 +1,47 @@
+{
+    "name": "@sethrensei/ui-core",
+    "version": "1.0.0",
+    "description": "Modern UI framework built with Tailwind CSS v4",
+    "main": "./dist/sethrensei-ui.umd.js",
+    "module": "./dist/sethrensei-ui.js",
+    "types": "./dist/index.d.ts",
+    "style": "./dist/sethrensei-ui.min.css",
+    "exports": {
+        ".": {
+            "import": "./dist/sethrensei-ui.js",
+            "require": "./dist/sethrensei-ui.umd.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./styles": "./dist/sethrensei-ui.min.css"
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "web": "vite",
+        "dev": "vite build --watch",
+        "build": "vite build",
+        "clean": "rimraf dist"
+    },
+    "keywords": [
+        "tailwind",
+        "ui",
+        "framework",
+        "design-system",
+        "components"
+    ],
+    "author": "Seth Rensei <eddisethsita@proton.me>",
+    "license": "ISC",
+    "type": "module",
+    "dependencies": {
+        "@floating-ui/dom": "^1.7.6"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.0",
+        "lightningcss": "^1.32.0",
+        "postcss": "^8.5.15",
+        "tailwindcss": "^4.3.0",
+        "typescript": "^6.0.3",
+        "vite": "^8.0.14"
+    }
+}
