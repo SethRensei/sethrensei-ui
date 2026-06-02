@@ -1,0 +1,16 @@
+@variant ui-active (&.active, &[data-active]);
+
+@variant ui-disabled (&.disabled,
+    &[disabled],
+    &[data-disabled]);
+
+@variant ui-error (&.error,
+    &.is-invalid,
+    &[data-error]);
+
+@variant ui-loading (&.loading,
+    &.is-loading,
+    &[data-loading]);
+
+@variant ui-open (&.open,
+    &[data-open]);

@@ -1,0 +1,71 @@
+@utility container {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| CONTAINER SIZES
+|--------------------------------------------------------------------------
+*/
+
+@utility container-sm {
+    max-width: 640px;
+}
+
+@utility container-md {
+    max-width: 768px;
+}
+
+@utility container-lg {
+    max-width: 1024px;
+}
+
+@utility container-xl {
+    max-width: 1280px;
+}
+
+@utility container-2xl {
+    max-width: 1536px;
+}
+
+@utility container-fluid {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 1rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| TEXT
+|--------------------------------------------------------------------------
+*/
+
+@utility text-balance {
+    text-wrap: balance;
+}
+
+/*
+|--------------------------------------------------------------------------
+| SCROLLBAR
+|--------------------------------------------------------------------------
+*/
+
+@utility scrollbar-hidden {
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| SHADOWS
+|--------------------------------------------------------------------------
+*/
+
+@utility shadow-card {
+    box-shadow: var(--shadow-card);
+}

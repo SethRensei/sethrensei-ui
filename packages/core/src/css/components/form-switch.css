@@ -1,0 +1,41 @@
+@layer components {
+
+    .input-switch {
+        position: relative;
+        display: inline-block;
+        width: 2.5rem;
+        height: 1.5rem;
+    }
+
+    .input-switch input {
+        display: none;
+    }
+
+    .switch-slider {
+        position: absolute;
+        inset: 0;
+        border-radius: 9999px;
+        background: var(--color-gray-300);
+        transition: .2s;
+    }
+
+    .switch-slider::before {
+        content: "";
+        position: absolute;
+        width: 1.125rem;
+        height: 1.125rem;
+        left: .1875rem;
+        top: .1875rem;
+        border-radius: 9999px;
+        background: var(--color-white);
+        transition: .2s;
+    }
+
+    .input-switch input:checked+.switch-slider {
+        background: var(--color-primary-500);
+    }
+
+    .input-switch input:checked+.switch-slider::before {
+        transform: translateX(1rem);
+    }
+}

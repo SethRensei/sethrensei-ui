@@ -1,0 +1,114 @@
+@layer components {
+
+    .btn {
+
+        --btn-bg: var(--color-primary-500);
+        --btn-color: white;
+        --btn-border: transparent;
+
+        /*
+        |--------------------------------------------------------------------------
+        | STRUCTURE
+        |--------------------------------------------------------------------------
+        */
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        padding-inline: 1rem;
+        padding-block: .5rem;
+        font-size: .875rem;
+        font-weight: 500;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--btn-border);
+        background-color: var(--btn-bg);
+        color: var(--btn-color);
+        cursor: pointer;
+        transition:
+            background-color .2s,
+            color .2s,
+            border-color .2s,
+            opacity .2s;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | HOVER
+    |--------------------------------------------------------------------------
+    */
+
+    .btn:hover {
+        background-color: color-mix(in srgb,
+                var(--btn-bg) 85%,
+                black);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FOCUS
+    |--------------------------------------------------------------------------
+    */
+
+    .btn:focus-visible {
+        outline: 2px solid var(--ui-focus-color);
+        outline-offset: 2px;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DISABLED
+    |--------------------------------------------------------------------------
+    */
+
+    .btn:disabled,
+    .btn[data-disabled] {
+        opacity: .5;
+        pointer-events: none;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VARIANTS
+    |--------------------------------------------------------------------------
+    */
+
+    .btn-primary {
+        --btn-bg: var(--color-primary-500);
+        --btn-color: white;
+    }
+
+    .btn-secondary {
+        --btn-bg: var(--color-success-500);
+        --btn-color: white;
+    }
+
+    .btn-danger {
+        --btn-bg: var(--color-destructive-500);
+        --btn-color: white;
+    }
+
+    .btn-outline {
+        --btn-bg: transparent;
+        --btn-color: currentColor;
+        --btn-border: #d1d5db;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SIZES
+    |--------------------------------------------------------------------------
+    */
+
+    .btn-sm {
+        padding-inline: .75rem;
+        padding-block: .35rem;
+        font-size: .75rem;
+    }
+
+    .btn-lg {
+        padding-inline: 1.25rem;
+        padding-block: .75rem;
+        font-size: 1rem;
+    }
+}

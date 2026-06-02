@@ -1,0 +1,96 @@
+:root {
+    --ui-focus-color: #e8a800;
+    --ui-white: #ffffff;
+}
+
+@theme {
+
+    --font-sans: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /*
+    |--------------------------------------------------------------------------
+    | PRIMARY
+    |--------------------------------------------------------------------------
+    */
+
+    --color-primary-50: #fff8e6;
+    --color-primary-100: #ffefbf;
+    --color-primary-200: #ffe58a;
+    --color-primary-300: #ffdb55;
+    --color-primary-400: #ffd126;
+    --color-primary-500: #e8a800;
+    --color-primary-600: #c98f00;
+    --color-primary-700: #a67600;
+    --color-primary-800: #835c00;
+    --color-primary-900: #5c4000;
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUCCESS
+    |--------------------------------------------------------------------------
+    */
+
+    --color-success-50: #e8f8ef;
+    --color-success-100: #c2edd3;
+    --color-success-200: #91dfb2;
+    --color-success-300: #5fd090;
+    --color-success-400: #35c476;
+    --color-success-500: #1E9E5A;
+    --color-success-600: #18864c;
+    --color-success-700: #126d3d;
+    --color-success-800: #0c552f;
+    --color-success-900: #063d21;
+
+    /*
+    |--------------------------------------------------------------------------
+    | DESTRUCTIVE
+    |--------------------------------------------------------------------------
+    */
+
+    --color-destructive-50: #fef2f2;
+    --color-destructive-100: #fee2e2;
+    --color-destructive-200: #fecaca;
+    --color-destructive-300: #fca5a5;
+    --color-destructive-400: #f87171;
+    --color-destructive-500: #dc2626;
+    --color-destructive-600: #b91c1c;
+    --color-destructive-700: #991b1b;
+    --color-destructive-800: #7f1d1d;
+    --color-destructive-900: #651717;
+
+    /*
+    |--------------------------------------------------------------------------
+    | RADIUS
+    |--------------------------------------------------------------------------
+    */
+
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+
+    /*
+    |--------------------------------------------------------------------------
+    | SHADOWS
+    |--------------------------------------------------------------------------
+    */
+
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, .08);
+
+    /*
+    |--------------------------------------------------------------------------
+    | FLUID TYPE SCALE
+    |--------------------------------------------------------------------------
+    */
+
+    --text-xs: clamp(.75rem, .72rem + .10vw, .8125rem);
+    --text-sm: clamp(.875rem, .84rem + .15vw, .9375rem);
+    --text-base: clamp(1rem, .95rem + .20vw, 1.125rem);
+    --text-lg: clamp(1.125rem, 1.05rem + .35vw, 1.25rem);
+    --text-xl: clamp(1.25rem, 1.10rem + .50vw, 1.5rem);
+    --text-2xl: clamp(1.5rem, 1.30rem + .75vw, 1.875rem);
+    --text-3xl: clamp(1.875rem, 1.50rem + 1vw, 2.5rem);
+    --text-4xl: clamp(2.25rem, 1.80rem + 1.5vw, 3.5rem);
+    --text-5xl: clamp(3rem, 2rem + 2vw, 5rem);
+}

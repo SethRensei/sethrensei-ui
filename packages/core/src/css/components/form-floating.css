@@ -1,0 +1,33 @@
+@layer components {
+
+    .form-floating {
+        position: relative;
+    }
+
+    .form-floating>.form-input {
+        padding-top: 1.5rem;
+        padding-bottom: .5rem;
+    }
+
+    .form-floating>.form-label {
+        position: absolute;
+        left: .875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        transition:
+            transform .2s,
+            top .2s,
+            font-size .2s;
+
+        pointer-events: none;
+        background: var(--color-primary-50);
+        padding-inline: .25rem;
+    }
+
+    .form-floating>.form-input:focus+.form-label,
+    .form-floating>.form-input:not(:placeholder-shown)+.form-label {
+        top: 0;
+        font-size: .75rem;
+        transform: translateY(-50%);
+    }
+}

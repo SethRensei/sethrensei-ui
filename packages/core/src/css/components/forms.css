@@ -1,0 +1,109 @@
+@layer components {
+
+    /*
+    |--------------------------------------------------------------------------
+    | GROUP
+    |--------------------------------------------------------------------------
+    */
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .form-control {
+        position: relative;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | LABEL
+    |--------------------------------------------------------------------------
+    */
+
+    .form-label {
+        display: inline-block;
+        font-size: .875rem;
+        font-weight: 500;
+        color: inherit;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | INPUT BASE
+    |--------------------------------------------------------------------------
+    */
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        width: 100%;
+        padding: .625rem .875rem;
+        border: 1px solid #d1d5db;
+        border-radius: var(--radius-md);
+        background: var(--color-primary-50);
+        color: inherit;
+        font-size: .875rem;
+        transition:
+            border-color .2s,
+            box-shadow .2s,
+            background-color .2s;
+    }
+
+    .form-input::placeholder, .form-textarea::placeholder {
+        color: var(--color-zinc-400);
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        outline: none;
+        border-color: var(--ui-focus-color);
+        box-shadow:
+            0 0 0 3px color-mix(in srgb,
+                var(--ui-focus-color) 25%,
+                transparent);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATES
+    |--------------------------------------------------------------------------
+    */
+
+    .form-input[data-error],
+    .form-select[data-error],
+    .form-textarea[data-error] {
+
+        border-color: var(--color-destructive-500);
+    }
+
+    .form-input[disabled],
+    .form-select[disabled],
+    .form-textarea[disabled] {
+        opacity: .65;
+        cursor: not-allowed;
+        background: var(--color-gray-500);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | HELPERS
+    |--------------------------------------------------------------------------
+    */
+
+    .form-helper {
+        font-size: .75rem;
+        color: #6b7280;
+    }
+
+    .form-error {
+        font-size: .75rem;
+        color: var(--color-destructive-500);
+    }
+}

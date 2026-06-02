@@ -1,0 +1,17 @@
+@layer components {
+
+    .radio {
+        width: 1rem;
+        height: 1rem;
+        accent-color: var(--color-primary-500);
+        cursor: pointer;
+    }
+
+    .radio-label {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        cursor: pointer;
+        user-select: none;
+    }
+}

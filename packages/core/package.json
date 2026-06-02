@@ -18,10 +18,12 @@
         "dist"
     ],
     "scripts": {
-        "web": "vite",
+        "build": "pnpm generate:safelist && vite build",
+        "clean": "rimraf dist",
         "dev": "vite build --watch",
-        "build": "vite build",
-        "clean": "rimraf dist"
+        "generate:safelist": "tsx scripts/generateSafelist.ts",
+        "preview": "vite preview",
+        "web": "pnpm generate:safelist && vite"
     },
     "keywords": [
         "tailwind",

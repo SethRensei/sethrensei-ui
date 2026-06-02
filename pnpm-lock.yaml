@@ -253,7 +253,7 @@ importers:
         specifier: ^5.0.1
         version: 5.0.1(esbuild@0.28.0)(rolldown@1.0.2)(typescript@6.0.3)(vite@8.0.14(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3))
 
-  packages/sethrensei-ui:
+  packages/core:
     dependencies:
       '@floating-ui/dom':
         specifier: ^1.7.6

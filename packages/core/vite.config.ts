@@ -4,6 +4,7 @@ import path from "node:path";
 export default defineConfig({
     server: {
         port: 3000,
+        open: "/playground/index.html",
     },
     build: {
         outDir: "dist",
