@@ -1,18 +1,13 @@
+@import "tailwindcss";
+
 @import "./theme.css";
 
 @import "./variants.css";
 
+@import "./utilities.css";
+
 @import "./generated/safelist.css";
 
-@import "tailwindcss";
-
-/*
-|--------------------------------------------------------------------------
-| UTILITIES
-|--------------------------------------------------------------------------
-*/
-
-@import "./utilities.css";
 
 /*
 |--------------------------------------------------------------------------
@@ -20,14 +15,17 @@
 |--------------------------------------------------------------------------
 */
 
-@layer components {
 
-    @import "./components/typography.css";
-    @import "./components/buttons.css";
-    @import "./components/form-check.css";
-    @import "./components/form-file.css";
-    @import "./components/form-floating.css";
-    @import "./components/form-radio.css";
-    @import "./components/form-switch.css";
-    @import "./components/forms.css";
-}
+@import "./components/typography.css";
+@import "./components/buttons.css";
+@import "./components/form-check.css";
+@import "./components/form-file.css";
+@import "./components/form-floating.css";
+@import "./components/form-radio.css";
+@import "./components/form-switch.css";
+@import "./components/forms.css";
+
+/* UI COMPONENTS */
+@import "./components/UI/selection.css";
+@import "./components/UI/select-search.css";
+@import "./components/UI/toggle-3d.css";

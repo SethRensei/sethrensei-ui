@@ -1,0 +1,144 @@
+@layer components {
+
+    .ui-toggle-3d {
+        --toggle-width: 3rem;
+        --toggle-height: 5.5rem;
+        --toggle-on-color: var(--color-success-500);
+        --toggle-off-color: var(--color-destructive-500);
+
+        display: inline-block;
+        position: relative;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .ui-toggle-3d-input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+    }
+
+    .ui-toggle-3d-body {
+        position: relative;
+        width: var(--toggle-width);
+        height: var(--toggle-height);
+        display: block;
+        border-radius: 999px;
+
+        background: linear-gradient(to right, #2d2d2d, #4b4b4b, #2d2d2d);
+
+        border: 1px solid #111;
+        overflow: visible;
+        box-shadow: inset 0 0 1rem rgba(0, 0, 0, .9), 0 0 0.5rem rgba(255, 255, 255, .15);
+    }
+
+    .ui-toggle-3d-inner {
+        position: absolute;
+        inset: 8%;
+        border-radius: inherit;
+        background: linear-gradient(to right, #2d2d2d, #4b4b4b, #2d2d2d);
+    }
+
+    .ui-toggle-3d-handle {
+        position: absolute;
+        left: 50%;
+        width: 1.2rem;
+        height: 1.2rem;
+        transform: translateX(-50%);
+        top: 3.8rem;
+        border-radius: 999px;
+        background: linear-gradient(to right, #111, #777, #111);
+        transition: top .2s ease;
+    }
+
+    .ui-toggle-3d-cap {
+        position: absolute;
+        left: 50%;
+        width: 1.8rem;
+        height: 1.8rem;
+        transform: translateX(-50%);
+        top: 4.5rem;
+        border-radius: 999px;
+        background: linear-gradient(to right, #5f5f5f, #878787);
+        transition: top .2s ease;
+    }
+
+    .ui-toggle-3d-led {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: .8rem;
+        height: .8rem;
+        border-radius: 999px;
+        border: 1px solid #111;
+    }
+
+    .ui-toggle-3d-led-on {
+        top: -.9rem;
+        background: var(--toggle-on-color);
+    }
+
+    .ui-toggle-3d-led-off {
+        bottom: -.9rem;
+        background: var(--toggle-off-color);
+    }
+
+    .ui-toggle-3d-text {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: .6rem;
+        font-weight: 700;
+        color: white;
+        white-space: nowrap;
+    }
+
+    .ui-toggle-3d-text-on {
+        top: -2rem;
+    }
+
+    .ui-toggle-3d-text-off {
+        bottom: -2rem;
+    }
+
+    /*
+     * CHECKED
+     */
+
+    .ui-toggle-3d-input:checked~.ui-toggle-3d-body .ui-toggle-3d-handle {
+        top: 1rem;
+    }
+
+    .ui-toggle-3d-input:checked~.ui-toggle-3d-body .ui-toggle-3d-cap {
+        top: -.3rem;
+    }
+
+    .ui-toggle-3d-input:checked~.ui-toggle-3d-body .ui-toggle-3d-led-on {
+        box-shadow:
+            0 0 1rem var(--toggle-on-color),
+            0 0 2rem var(--toggle-on-color);
+    }
+
+    .ui-toggle-3d-input:checked~.ui-toggle-3d-body .ui-toggle-3d-led-off {
+        box-shadow: none;
+    }
+
+    .ui-toggle-3d-input:not(:checked)~.ui-toggle-3d-body .ui-toggle-3d-led-off {
+        box-shadow:
+            0 0 1rem var(--toggle-off-color),
+            0 0 2rem var(--toggle-off-color);
+    }
+
+    .ui-toggle-3d-primary {
+        --toggle-on-color: var(--color-primary-500);
+    }
+
+    .ui-toggle-3d-success {
+        --toggle-on-color: var(--color-success-500);
+    }
+
+    .ui-toggle-3d-danger {
+        --toggle-on-color: var(--color-destructive-500);
+    }
+
+}

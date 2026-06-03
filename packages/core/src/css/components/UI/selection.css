@@ -1,0 +1,140 @@
+@layer components {
+
+    .ui-check,
+    .ui-radio {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+    }
+
+    .ui-selection {
+        display: inline-flex;
+        align-items: center;
+        gap: .75rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .ui-selection-label {
+        font-size: .875rem;
+    }
+
+    /* RADIO PILL */
+    .ui-radio-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .3rem 1rem;
+        border-radius: 9999px;
+        cursor: pointer;
+        background: var(--color-primary-50);
+        border: 1px solid var(--color-primary-300);
+        transition: .2s;
+    }
+
+    .ui-radio-pill-indicator {
+        width: 20px;
+        height: 20px;
+        border-radius: 9999px;
+        background: var(--color-primary-700);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ui-radio-pill-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 9999px;
+        background: var(--color-primary-50);
+        opacity: 0;
+    }
+
+    .ui-radio:checked+.ui-radio-pill-indicator .ui-radio-pill-dot {
+        opacity: 1;
+    }
+
+    /* CLASSIC CHECKBOX */
+
+    .ui-checkbox {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        cursor: pointer;
+    }
+
+    .ui-checkbox-indicator {
+        width: 20px;
+        height: 20px;
+        border-radius: var(--radius-sm);
+        border: 2px solid var(--color-primary-500);
+        position: relative;
+    }
+
+    .ui-check:checked+.ui-checkbox-indicator::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        background: var(--color-primary-500);
+        border-radius: 2px;
+    }
+
+    /* TOGGLE SWITCH */
+    .ui-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .ui-toggle-track {
+        width: 44px;
+        height: 24px;
+        border-radius: 9999px;
+        background: var(--color-zinc-300);
+        position: relative;
+        transition: .2s;
+    }
+
+    .ui-toggle-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 9999px;
+        background: var(--color-primary-50);
+        position: absolute;
+        left: 3px;
+        top: 3px;
+        transition: .2s;
+    }
+
+    .ui-check:checked+.ui-toggle-track {
+        background: var(--color-primary-500);
+    }
+
+    .ui-check:checked+.ui-toggle-track .ui-toggle-thumb {
+        transform: translateX(20px);
+    }
+
+    /* SEGEMENTED RADIO GROUP */
+    .ui-radio-group {
+        display: inline-flex;
+        border: 1px solid #d1d5db;
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .ui-radio-group label {
+        position: relative;
+    }
+
+    .ui-radio-group span {
+        display: block;
+        padding: .3rem 1rem;
+        cursor: pointer;
+    }
+
+    .ui-radio-group .ui-radio:checked+span {
+        background: var(--color-primary-500);
+        color: white;
+    }
+}
