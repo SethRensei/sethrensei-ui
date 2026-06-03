@@ -4,8 +4,11 @@
 
 @import "./variants.css";
 
+/* UTILITIES */
 @import "./utilities.css";
+@import "./components/layout/layout.css";
 
+/* CLASSLIST */
 @import "./generated/safelist.css";
 
 
@@ -26,6 +29,12 @@
 @import "./components/forms.css";
 @import "./components/pagination.css";
 @import "./components/dropdown.css";
+@import "./components/badge.css";
+@import "./components/modal.css";
+
+/* LAYOUT COMPONENTS */
+@import "./components/layout/navbar.css";
+@import "./components/layout/sidebar.css";
 
 /* UI COMPONENTS */
 @import "./components/UI/selection.css";

@@ -1,0 +1,256 @@
+@layer components {
+    /* =====================================================
+       NAVBAR ROOT & CONTAINER
+    ===================================================== */
+
+    .navbar {
+        border-bottom: 1px solid var(--color-gray-200);
+        background-color: rgba(255, 255, 255, 0.9);
+        /* white/90 */
+        backdrop-filter: blur(12px);
+    }
+
+    .navbar-fixed {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 20;
+    }
+
+    .navbar-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    .navbar-container {
+        /* Style hérité du container universel */
+        width: 100%;
+        margin-right: auto;
+        margin-left: auto;
+        max-width: 1536px;
+
+        height: 4rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* =====================================================
+       ELEMENTS INTERNES
+    ===================================================== */
+
+    .navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 700;
+        font-size: 1.125rem;
+        color: var(--color-gray-900);
+        text-decoration: none;
+    }
+
+    .navbar-nav {
+        display: none;
+    }
+
+    .navbar-item {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        color: var(--color-gray-700);
+        transition: all 0.2s ease-in-out;
+        text-decoration: none;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--color-gray-100);
+        }
+
+        &.active {
+            background-color: var(--color-primary-500);
+            color: var(--color-white);
+        }
+    }
+
+
+    .navbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .navbar-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--color-gray-100);
+
+        }
+    }
+
+
+    /* =====================================================
+       MOBILE MENU
+    ===================================================== */
+
+    .mobile-menu {
+        display: none;
+        border-top: 1px solid var(--color-gray-100);
+        background-color: var(--color-white);
+        border-bottom-left-radius: 0.75rem;
+        border-bottom-right-radius: 0.75rem;
+
+        &.open {
+            display: block;
+        }
+    }
+
+
+    .mobile-menu-content {
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+        gap: 0.5rem;
+    }
+
+    /* =====================================================
+       RESPONSIVE LAYOUT (md: equivalent à @media 768px)
+    ===================================================== */
+
+    @media (min-width: 768px) {
+        .navbar-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-toggle {
+            display: none;
+        }
+
+        .mobile-menu {
+            display: none !important;
+        }
+    }
+
+    /* =====================================================
+       VARIANTE A : NAVBAR CENTRÉE
+    ===================================================== */
+
+    @media (min-width: 768px) {
+        .navbar-center .navbar-container {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: center;
+            justify-content: initial;
+        }
+
+        .navbar-center .navbar-nav {
+            justify-content: center;
+        }
+
+        .navbar-center .navbar-actions {
+            justify-content: flex-end;
+        }
+    }
+
+    /* =====================================================
+       VARIANTE B : NAVBAR FLOTTANTE INTÉGRÉE
+    ===================================================== */
+
+    .navbar-floating {
+        position: sticky;
+        top: 1rem;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        width: calc(100% - 2rem);
+        max-width: 80rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--color-gray-200);
+        background-color: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        backdrop-filter: blur(16px);
+    }
+
+    .navbar-floating .navbar-container {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    /* =====================================================
+       VARIANTE C : DASHBOARD NAVBAR & SIDEBAR TRIGGER
+    ===================================================== */
+
+    .navbar-dashboard {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        width: 100%;
+        border-bottom: 1px solid var(--color-gray-100);
+        background-color: var(--color-white);
+    }
+
+    .navbar-dashboard .navbar-container {
+        max-width: 100%;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        justify-content: space-between;
+    }
+
+    .sidebar-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.375rem;
+        color: var(--color-gray-500);
+        cursor: pointer;
+        margin-right: 0.5rem;
+        transition: all 0.2s ease-in-out;
+
+        &:hover {
+            background-color: var(--color-gray-100);
+            color: var(--color-gray-700)
+        }
+    }
+
+
+    /* =====================================================
+       VARIANTE D : LIENS À SOULIGNEMENT
+    ===================================================== */
+
+    .navbar-underline .navbar-item {
+        border-radius: 0;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+        background-color: transparent;
+        border-bottom: 2px solid transparent;
+        color: var(--color-gray-600);
+    }
+
+    .navbar-underline .navbar-item:hover {
+        background-color: transparent;
+        color: var(--color-gray-900);
+    }
+
+    .navbar-underline .navbar-item.active {
+        background-color: transparent;
+        color: var(--color-primary-500);
+        border-bottom-color: var(--color-primary-500);
+    }
+}

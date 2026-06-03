@@ -1,0 +1,31 @@
+@layer components {
+    .badge {
+        --badge-radius: var(--radius-md);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .25rem;
+        padding: 0.25rem 0.5rem;
+        font-size: .75rem;
+        font-weight: 500;
+        border-radius: var(--badge-radius);
+        background-color: var(--color-primary-500);
+    }
+
+    .badge-square {
+        --badge-radius: 0;
+    }
+
+    .badge-success {
+        background-color: var(--color-success-500);
+    }
+
+    .badge-danger {
+        background-color: var(--color-destructive-500);
+    }
+
+    .badge-circle {
+        padding: .7rem;
+        --badge-radius: 9999px;
+    }
+}
