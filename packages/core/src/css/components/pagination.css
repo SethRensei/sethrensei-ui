@@ -1,0 +1,190 @@
+@layer components {
+    /* =====================================================
+       PAGINATION ATOMIQUE & UNIVERSELLE (PUR CSS)
+    ===================================================== */
+
+    .pagination {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        font-family: sans-serif;
+    }
+
+    /* Base pour un item de pagination */
+    .pagination-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.5rem;
+        min-width: 1.25rem;
+        padding-left: 0.625rem;
+        padding-right: 0.625rem;
+        font-size: 1rem;
+        text-decoration: none;
+        background-color: transparent;
+        color: var(--color-gray-400);
+        user-select: none;
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+    }
+
+    .pagination-icon {
+        height: 20px;
+        width: 20px;
+        fill: currentColor;
+        object-fit: contain;
+    }
+
+    /* Gestion des états désactivés */
+    .pagination-item:disabled,
+    .pagination-item.disabled,
+    .pagination-item[disabled] {
+        pointer-events: none;
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+
+    /* --- VARIANTE 1 : Cartes Blanches Ombrées --- */
+    .pagination-card {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.5rem;
+        min-width: 1.25rem;
+        padding-left: 0.625rem;
+        padding-right: 0.625rem;
+        font-size: 1rem;
+        text-decoration: none;
+        background-color: transparent;
+        color: var(--color-gray-400);
+        user-select: none;
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+
+        background-color: var(--color-white);
+        margin-left: 0.25rem;
+        margin-right: 0.25rem;
+        margin-bottom: 0.5rem;
+        border-radius: var(--ui-radius-base, 4px);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    }
+
+    .pagination-card:hover,
+    .pagination-card.active,
+    .pagination-card[aria-current="page"] {
+        background-color: var(--color-primary-500);
+        color: var(--color-white);
+    }
+
+
+    /* --- VARIANTE 2 : Cercles Gris --- */
+    .pagination-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+        user-select: none;
+
+        background-color: var(--color-gray-200);
+        color: var(--color-gray-700);
+        margin-left: 3px;
+        margin-right: 3px;
+        margin-bottom: 0.375rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 9999px;
+        padding: 0;
+    }
+
+    .pagination-circle:hover,
+    .pagination-circle.active,
+    .pagination-circle[aria-current="page"] {
+        background-color: var(--color-primary-500);
+        color: var(--color-white);
+    }
+
+
+    /* --- VARIANTE 3 : Groupe de boutons Pill --- */
+    .pagination-pill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.5rem;
+        min-width: 1.25rem;
+        padding: 0 0.625rem;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+        user-select: none;
+
+        color: var(--color-white);
+        margin-left: -1px;
+        margin-right: -1px;
+        margin-bottom: 0.375rem;
+        border: 1px solid rgba(0, 0, 0, 0.25);
+        background-color: var(--color-primary-500);
+        box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .pagination-pill:hover,
+    .pagination-pill.active,
+    .pagination-pill[aria-current="page"] {
+        background-color: var(--color-success-600);
+    }
+
+    .pagination-pill:first-child {
+        border-top-left-radius: 9999px;
+        border-bottom-left-radius: 9999px;
+    }
+
+    .pagination-pill:last-child {
+        border-top-right-radius: 9999px;
+        border-bottom-right-radius: 9999px;
+    }
+
+
+    /* --- VARIANTE 4 : Minimaliste sur barre blanche --- */
+    .pagination-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.5rem;
+        min-width: 1.25rem;
+        padding: 0 0.625rem;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+        user-select: none;
+
+        color: var(--color-gray-800);
+        margin-left: 0.125rem;
+        margin-right: 0.125rem;
+        margin-bottom: 0.375rem;
+        border-radius: var(--ui-radius-base, 4px);
+    }
+
+    .pagination-bar:hover,
+    .pagination-bar.active,
+    .pagination-bar[aria-current="page"] {
+        background-color: var(--color-primary-600);
+        color: var(--color-white);
+    }
+
+    /* Conteneur optionnel pour la variante 4 */
+    .pagination-bar-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        font-family: sans-serif;
+
+        background-color: var(--color-white);
+        border-radius: var(--ui-radius-base, 4px);
+        padding-top: 0.375rem;
+    }
+}

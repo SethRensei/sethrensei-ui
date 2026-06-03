@@ -1,4 +1,5 @@
 import { UISelect } from "./UI/select-search.js";
+import { Dropdown } from "./Classic/dropdown.js";
 
 function initUISelects(root = document) {
     root.querySelectorAll(".ui-select:not([data-ui-select-init])").forEach(
@@ -15,3 +16,8 @@ function initUISelects(root = document) {
 }
 
 document.addEventListener("DOMContentLoaded", () => initUISelects());
+
+// DROPDOWNS
+document.querySelectorAll(".dropdown").forEach((element) => {
+    new Dropdown(element);
+});

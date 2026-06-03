@@ -24,6 +24,8 @@
 @import "./components/form-radio.css";
 @import "./components/form-switch.css";
 @import "./components/forms.css";
+@import "./components/pagination.css";
+@import "./components/dropdown.css";
 
 /* UI COMPONENTS */
 @import "./components/UI/selection.css";

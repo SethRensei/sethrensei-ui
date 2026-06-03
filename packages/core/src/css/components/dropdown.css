@@ -1,0 +1,127 @@
+@layer components {
+
+    /* =====================================================
+       DROPDOWN ROOT
+    ===================================================== */
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    /* =====================================================
+       TRIGGER
+    ===================================================== */
+
+    .dropdown-trigger {
+        display: inline-flex;
+        width: 100%;
+        align-items: center;
+        gap: 0.5rem;
+        /* 8px */
+        cursor: pointer;
+    }
+
+    /* =====================================================
+       MENU
+    ===================================================== */
+
+    .dropdown-menu {
+        position: absolute;
+        z-index: 50;
+        margin-top: 0.5rem;
+        min-width: 220px;
+        overflow: hidden;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--color-gray-200);
+        background-color: var(--color-white);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(0.5rem);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* État ouvert par défaut (gauche et droite) */
+    .dropdown.open .dropdown-menu {
+        opacity: 100;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    /* =====================================================
+       POSITIONS
+    ===================================================== */
+
+    .dropdown-left .dropdown-menu {
+        left: 0;
+    }
+
+    .dropdown-right .dropdown-menu {
+        right: 0;
+    }
+
+    /* Gestion spécifique du centrage pour préserver l'animation de slide */
+    .dropdown-center .dropdown-menu {
+        left: 50%;
+        transform: translateX(-50%) translateY(0.5rem);
+    }
+
+    .dropdown-center.open .dropdown-menu {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    /* =====================================================
+       ITEMS
+    ===================================================== */
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        color: var(--color-gray-700);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--color-gray-100);
+        }
+    }
+
+
+    /* =====================================================
+       DIVIDER
+    ===================================================== */
+
+    .dropdown-divider {
+        height: 1px;
+        background-color: var(--color-gray-200);
+        margin-top: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+
+    /* =====================================================
+       HEADER
+    ===================================================== */
+
+    .dropdown-header {
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--color-gray-500);
+    }
+
+    /* =====================================================
+       ICON
+    ===================================================== */
+
+    .dropdown-icon {
+        width: 1rem;
+        height: 1rem;
+    }
+
+}
