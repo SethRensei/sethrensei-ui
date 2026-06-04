@@ -1,0 +1,102 @@
+@layer components {
+    .ui-alert {
+        position: relative;
+        font-size: 13.5px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 13px 16px;
+        border: 1px solid transparent;
+        border-radius: var(--radius-md);
+    }
+
+    .ui-alert-info {
+        background-color: var(--color-blue-200);
+        color: var(--color-blue-400);
+        border-color: var(--color-blue-600);
+    }
+
+    .ui-alert-icon {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        margin-top: 1px;
+        opacity: 0.9;
+    }
+
+    .ui-alert-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ui-alert-title {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 1px;
+        font-size: 13.5px;
+    }
+
+    .ui-alert-text {
+        font-size: 13px;
+        opacity: 0.85;
+    }
+
+    .ui-alert-success {
+        background-color: var(--color-success-300);
+        color: var(--color-success-600);
+        border-color: var(--color-success-400);
+    }
+
+    .ui-alert-warning {
+        background-color: var(--color-primary-100);
+        color: var(--color-primary-800);
+        border-color: var(--color-primary-300);
+    }
+
+    .ui-alert-danger {
+        background-color: var(--color-destructive-300);
+        color: var(--color-destructive-600);
+        border-color: var(--color-destructive-400);
+    }
+
+    .ui-alert-close {
+        position: absolute;
+        top: 1%;
+        transform: translateY(-50%);
+        right: -4px;
+        z-index: 5;
+        flex-shrink: 0;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        background: var(--color-destructive-300);
+        border: none;
+        cursor: pointer;
+        color: var(--color-destructive-500);
+        opacity: 0.6;
+        border-radius: 999px;
+        font-size: 16px;
+        transition: opacity 0.25s, background 0.15s;
+
+        &:hover {
+            opacity: 1;
+            background: var(--color-destructive-600);
+            color: var(--color-white);
+        }
+    }
+
+    .ui-alert-hiding {
+        animation-name: ui-fade-out;
+        animation-duration: 300ms;
+        animation-fill-mode: both;
+        animation-timing-function: ease-in;
+        pointer-events: none;
+    }
+
+    .ui-alert+.ui-alert {
+        margin-top: 10px;
+    }
+}

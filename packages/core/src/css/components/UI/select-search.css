@@ -1,6 +1,6 @@
 @layer components {
     .ui-select {
-        --select-bg: var(--color-primary-50);
+        --select-bg: var(--color-gray-300);
         --select-border: var(--color-primary-300);
         --select-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .08);
         --select-shadow-focus: 0 0 0 3px rgba(99, 102, 241, .15);
@@ -17,7 +17,7 @@
         --select-trigger-placeholder: var(--color-primary-500);
 
         /* OPTION */
-        --option-hover-bg: var(--color-primary-50);
+        --option-hover-bg: var(--color-gray-300);
         --option-selected-bg: var(--color-primary-200);
         --option-selected-color: var(--color-primary-700);
         --option-px: 12px;
@@ -58,7 +58,7 @@
         min-height: var(--select-trigger-h);
         padding: 6px var(--select-trigger-px);
         background: var(--select-bg);
-        border: 1.5px solid var(--border-color);
+        border: 2px solid var(--border-color);
         border-radius: var(--radius-md);
         color: var(--select-trigger-color);
         font-family: inherit;

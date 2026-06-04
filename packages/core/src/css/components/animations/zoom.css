@@ -1,0 +1,40 @@
+@layer utilities {
+    .animate-zoom-in {
+        animation-name: ui-zoom-in;
+    }
+
+    .animate-zoom-out {
+        animation-name: ui-zoom-out;
+    }
+
+    @keyframes ui-zoom-in {
+        0% {
+            opacity: 0;
+            transform: scale(.3)
+        }
+
+        60% {
+            opacity: 1
+        }
+
+        100% {
+            transform: scale(1)
+        }
+    }
+
+    @keyframes ui-zoom-out {
+        0% {
+            opacity: 1;
+            transform: scale(1)
+        }
+
+        50% {
+            opacity: 0;
+            transform: scale(.3)
+        }
+
+        100% {
+            opacity: 0
+        }
+    }
+}

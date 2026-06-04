@@ -46,9 +46,9 @@
     .form-textarea {
         width: 100%;
         padding: .625rem .875rem;
-        border: 1px solid var(--border-color);
+        border: 2px solid var(--border-color);
         border-radius: var(--radius-md);
-        background: var(--color-primary-50);
+        background: var(--color-gray-300);
         color: inherit;
         font-size: .875rem;
         transition:

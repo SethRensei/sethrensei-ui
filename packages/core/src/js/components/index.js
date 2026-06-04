@@ -4,9 +4,13 @@ import { UISelect } from "./UI/select-search.js";
 import { Dropdown } from "./Classic/dropdown.js";
 import { Navbar } from "./Layout/navbar.js";
 import { Modal } from "./Classic/modal.js";
+import { UIFileDropzone } from "./UI/file-dropzone.js";
+import { UIAlert } from "./UI/alert.js";
+import { uiToast } from "./UI/toast.js";
 
 Alpine.start();
 
+/* ── 1. INITIALISATEUR Select With Search ───────────────────── */
 function initUISelects(root = document) {
     root.querySelectorAll(".ui-select:not([data-ui-select-init])").forEach(
         (el) => {
@@ -21,27 +25,67 @@ function initUISelects(root = document) {
     );
 }
 
-document.addEventListener("DOMContentLoaded", () => initUISelects());
+/* ── 2. INITIALISATEUR FILE DROPZONES ───────────────── */
+function initUIFileDropzones(root = document) {
+    // Ciblage via la classe de bloc racine .form-file-group
+    root.querySelectorAll(".form-file-group:not([data-file-init])").forEach(
+        (el) => {
+            // Vérification de sécurité élémentaire (présence de l'input et du trigger)
+            if (!el.querySelector(".dropzone-input") || !el.querySelector(".dropzone-trigger")) return;
+            
+            el.dataset.fileInit = "1"; // Guard anti-doublon
 
-// DROPDOWNS
-document.querySelectorAll(".dropdown").forEach((element) => {
-    new Dropdown(element);
-});
+            // Récupération des options dynamiques via des attributs de données (data-*) optionnels
+            const maxSize = el.dataset.maxSize ? parseInt(el.dataset.maxSize, 10) : 10240;
+            const allowed = el.dataset.allowedTypes ? el.dataset.allowedTypes.split(",") : ["image/png", "image/jpeg", "image/jpg"];
 
-// NAVBAR
-document.querySelectorAll(".navbar").forEach((element) => {
-    new Navbar(element);
-});
+            // Instanciation
+            new UIFileDropzone(el, {
+                maxSizeKb: maxSize,
+                allowedTypes: allowed
+            });
+        },
+    );
+}
 
-// MODALS
-document.querySelectorAll("[data-modal-target]").forEach((trigger) => {
-    const target = document.querySelector(trigger.dataset.modalTarget);
-
-    if (!target) return;
-
-    const modal = new Modal(target);
-
-    trigger.addEventListener("click", () => {
-        modal.open();
+/* ── 3. INITIALISATEUR ALERTS ─────────────────────────── */
+function initUIAlerts(root = document) {
+    root.querySelectorAll(
+        ".ui-alert[data-dismissible]:not([data-alert-init])",
+    ).forEach((el) => {
+        el.dataset.alertInit = "1";
+        new UIAlert(el);
     });
+}
+
+/* ── 4. INITIALISATEUR TOASTS  ─────────────────────────── */
+window.uiToast = uiToast;
+
+/* ── END. CYCLE DE VIE & ÉVÉNEMENTS ───────────────────── */
+document.addEventListener("DOMContentLoaded", () => {
+    // Initialisation des composants à états complexes / asynchrones
+    initUISelects();
+    initUIFileDropzones();
+    initUIAlerts();
+
+    // DROPDOWNS
+    document.querySelectorAll(".dropdown").forEach((element) => {
+        new Dropdown(element);
+    });
+
+    // NAVBAR
+    document.querySelectorAll(".navbar").forEach((element) => {
+        new Navbar(element);
+    });
+
+    // MODALS
+    document.querySelectorAll("[data-modal-target]").forEach((trigger) => {
+        const target = document.querySelector(trigger.dataset.modalTarget);
+        if (!target) return;
+
+        const modal = new Modal(target);
+        trigger.addEventListener("click", () => {
+            modal.open();
+        });
+    });    
 });

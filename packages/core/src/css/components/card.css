@@ -1,0 +1,46 @@
+@layer components {
+    .card {
+        --card-border: 1px solid rgba(0, 0, 0, 0.08);
+
+        background-color: var(--color-white);
+        border: var(--card-border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: var(--ui-shadow-sm);
+
+    }
+    
+    .card-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--ui-shadow-lg);
+    }
+
+    .card-header {
+        padding: 10px 15px;
+        border-bottom: var(--card-border);
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8;
+    }
+
+    .card-body {
+        padding: 15px;
+        flex: 1;
+        font: 13.5px;
+    }
+
+    .card-footer {
+        padding: 8px 15px;
+        background-color: var(--color-primary-50);
+        border-top: var(--card-border);
+        display: flex;
+        gap: 8px;
+    }
+}

@@ -33,6 +33,7 @@
         height: 100vh;
         overflow-y: auto;
         padding-left: 5px;
+        padding-right: 5px;
         box-sizing: border-box;
         scrollbar-color: var(--color-primary-500) transparent;
         scrollbar-width: thin;

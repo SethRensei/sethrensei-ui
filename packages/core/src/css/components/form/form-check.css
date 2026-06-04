@@ -2,9 +2,9 @@
 
     .form-file {
         width: 100%;
-        border: 1px solid var(--color-gray-300);
+        border: 2px solid var(--border-color);
         border-radius: var(--radius-md);
-        background: var(--color-primary-50);
+        background: var(--color-gray-300);
         font-size: .875rem;
     }
 

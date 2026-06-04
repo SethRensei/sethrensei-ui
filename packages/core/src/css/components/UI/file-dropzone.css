@@ -1,0 +1,215 @@
+/* =====================================================
+   FILE UPLOAD COMPONENT (DESIGN SYSTEM)
+===================================================== */
+
+/* Conteneur principal */
+.form-file-group {
+    margin-bottom: 2rem;
+    /* mb-8 */
+}
+
+/* Label principal */
+.form-file-label {
+    display: block;
+    font-size: 0.875rem;
+    /* text-sm */
+    font-weight: 600;
+    /* font-semibold */
+    color: #334155;
+    /* text-slate-700 */
+    margin-bottom: 0.75rem;
+    /* mb-3 */
+}
+
+.form-file-label span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    /* gap-2 */
+}
+
+/* Zone de dépôt (Dropzone) */
+.dropzone-container {
+    position: relative;
+}
+
+.dropzone-input {
+    display: none;
+    /* hidden */
+}
+
+.dropzone-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    background-color: var(--color-gray-300);
+    transition: all 0.2s ease-in-out;
+}
+
+.dropzone-trigger:hover,
+.dropzone-trigger.dragover {
+    border-color: var(--border-color);
+    background-color: var(--color-primary-300);
+    /* hover:bg-slate-50 */
+}
+
+/* Animation de l'icône au survol (Group-hover) */
+.dropzone-content {
+    text-align: center;
+}
+
+.dropzone-icon {
+    font-size: 1.875rem;
+    color: var(--color-success-400);
+    margin-bottom: 0.5rem;
+    transition: transform 0.2s ease-in-out;
+}
+
+.dropzone-trigger:hover .dropzone-icon,
+.dropzone-trigger.dragover .dropzone-icon {
+    transform: scale(1.1);
+}
+
+.dropzone-text-primary {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-black);
+    margin: 0;
+}
+
+.dropzone-text-secondary {
+    font-size: 0.75rem;
+    color: var(--color-gray-400);
+    margin-top: 0.25rem;
+}
+
+/* Texte d'aide sous le composant */
+.form-file-help {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--color-slate-500);
+}
+
+/* Zone d'affichage du fichier sélectionné */
+.file-preview-container {
+    margin-top: 0.75rem;
+}
+
+.file-preview-container.hidden {
+    display: none;
+}
+
+.file-preview-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background-color: var(--color-primary-50);
+    border-radius: 0.5rem;
+}
+
+.file-preview-details {
+    flex: 1 1 0%;
+}
+
+.file-preview-name {
+    font-weight: 600;
+    color: var(--color-black);
+    margin: 0;
+}
+
+.file-preview-size {
+    font-size: 0.75rem;
+    color: var(--color-gray-500);
+    margin: 0;
+}
+
+.file-preview-remove {
+    background: transparent;
+    border: none;
+    color: var(--color-destructive-500);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.file-preview-remove:hover {
+    color: var(--color-destructive-600);
+}
+
+/* Bloc d'erreur PHP */
+.form-file-error {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: var(--color-destructive-200);
+    border: 1px solid var(--color-destructive-200);
+    border-radius: 0.5rem;
+    color: var(--color-destructive-500);
+    font-size: 0.875rem;
+}
+
+
+/* =====================================================
+   DARK MODE EN CSS PUR (.dark)
+===================================================== */
+.dark .form-file-label {
+    color: #e2e8f0;
+}
+
+/* dark:text-slate-200 */
+.dark .dropzone-trigger {
+    border-color: #475569;
+}
+
+/* dark:border-slate-600 */
+.dark .dropzone-trigger:hover,
+.dark .dropzone-trigger.dragover {
+    background-color: rgba(51, 65, 85, 0.5);
+}
+
+/* dark:hover:bg-slate-700/50 */
+.dark .dropzone-text-primary {
+    color: #cbd5e1;
+}
+
+/* dark:text-slate-300 */
+.dark .dropzone-text-secondary {
+    color: #94a3b8;
+}
+
+/* dark:text-slate-400 */
+.dark .form-file-help {
+    color: #94a3b8;
+}
+
+.dark .file-preview-card {
+    background-color: #334155;
+}
+
+/* dark:bg-slate-700 */
+.dark .file-preview-name {
+    color: var(--color-white);
+}
+
+/* dark:text-white */
+.dark .file-preview-size {
+    color: #94a3b8;
+}
+
+.dark .form-file-error {
+    background-color: rgba(127, 29, 29, 0.2);
+    border-color: var(--color-destructive-800);
+    color: var(--color-destructive-200);
+}
+
+/* dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 */

@@ -9,6 +9,7 @@
     }
 
     .ui-selection {
+        position: relative;
         display: inline-flex;
         align-items: center;
         gap: .75rem;
@@ -22,6 +23,7 @@
 
     /* RADIO PILL */
     .ui-radio-pill {
+        position: relative;
         display: inline-flex;
         align-items: center;
         gap: .5rem;
@@ -58,6 +60,7 @@
     /* CLASSIC CHECKBOX */
 
     .ui-checkbox {
+        position: relative;
         display: inline-flex;
         align-items: center;
         gap: .5rem;
@@ -82,6 +85,7 @@
 
     /* TOGGLE SWITCH */
     .ui-toggle {
+        position: relative;
         display: inline-flex;
         align-items: center;
         gap: .5rem;
@@ -117,6 +121,7 @@
 
     /* SEGEMENTED RADIO GROUP */
     .ui-radio-group {
+        position: relative;
         display: inline-flex;
         border: 1px solid #d1d5db;
         border-radius: var(--radius-md);

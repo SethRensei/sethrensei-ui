@@ -1,0 +1,65 @@
+@layer utilities {
+    .animate-slide-in-up {
+        animation-name: ui-slide-in-up;
+    }
+
+    .animate-slide-in-down {
+        animation-name: ui-slide-in-down;
+    }
+
+    .animate-slide-in-left {
+        animation-name: ui-slide-in-left;
+    }
+
+    .animate-slide-in-right {
+        animation-name: ui-slide-in-right;
+    }
+
+    @keyframes ui-slide-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(100%)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }
+
+    @keyframes ui-slide-in-down {
+        from {
+            opacity: 0;
+            transform: translateY(-100%)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }
+
+    @keyframes ui-slide-in-left {
+        from {
+            opacity: 0;
+            transform: translateX(-100%)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0)
+        }
+    }
+
+    @keyframes ui-slide-in-right {
+        from {
+            opacity: 0;
+            transform: translateX(100%)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0)
+        }
+    }
+}

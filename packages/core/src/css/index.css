@@ -7,6 +7,7 @@
 /* UTILITIES */
 @import "./utilities.css";
 @import "./components/layout/layout.css";
+@import "./components/animations/index.css";
 
 /* CLASSLIST */
 @import "./generated/safelist.css";
@@ -21,16 +22,19 @@
 
 @import "./components/typography.css";
 @import "./components/buttons.css";
-@import "./components/form-check.css";
-@import "./components/form-file.css";
-@import "./components/form-floating.css";
-@import "./components/form-radio.css";
-@import "./components/form-switch.css";
-@import "./components/forms.css";
 @import "./components/pagination.css";
 @import "./components/dropdown.css";
 @import "./components/badge.css";
 @import "./components/modal.css";
+@import "./components/card.css";
+
+/* FORMS */
+@import "./components/form/form-check.css";
+@import "./components/form/form-file.css";
+@import "./components/form/form-floating.css";
+@import "./components/form/form-radio.css";
+@import "./components/form/form-switch.css";
+@import "./components/form/forms.css";
 
 /* LAYOUT COMPONENTS */
 @import "./components/layout/navbar.css";
@@ -40,3 +44,6 @@
 @import "./components/UI/selection.css";
 @import "./components/UI/select-search.css";
 @import "./components/UI/toggle-3d.css";
+@import "./components/UI/file-dropzone.css";
+@import "./components/UI/alert.css";
+@import "./components/UI/toast.css";

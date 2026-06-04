@@ -1,0 +1,42 @@
+@import "./fade.css";
+@import "./slide.css";
+@import "./zoom.css";
+
+@layer utilities {
+    .animate-ui {
+        animation-duration: 300ms;
+        animation-fill-mode: both;
+    }
+
+    .ease-linear {
+        animation-timing-function: linear;
+    }
+
+    .ease-in {
+        animation-timing-function: ease-in;
+    }
+
+    .ease-out {
+        animation-timing-function: ease-out;
+    }
+
+    .ease-in-out {
+        animation-timing-function: ease-in-out;
+    }
+
+    .infinite {
+        animation-iteration-count: infinite;
+    }
+
+    .once {
+        animation-iteration-count: 1;
+    }
+
+    .reverse {
+        animation-direction: reverse;
+    }
+
+    .alternate {
+        animation-direction: alternate;
+    }
+}
