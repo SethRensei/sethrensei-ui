@@ -7,6 +7,7 @@ import { Modal } from "./Classic/modal.js";
 import { UIFileDropzone } from "./UI/file-dropzone.js";
 import { UIAlert } from "./UI/alert.js";
 import { uiToast } from "./UI/toast.js";
+import { UIDataTable } from "./UI/datatable.js";
 
 Alpine.start();
 
@@ -31,18 +32,26 @@ function initUIFileDropzones(root = document) {
     root.querySelectorAll(".form-file-group:not([data-file-init])").forEach(
         (el) => {
             // Vérification de sécurité élémentaire (présence de l'input et du trigger)
-            if (!el.querySelector(".dropzone-input") || !el.querySelector(".dropzone-trigger")) return;
-            
+            if (
+                !el.querySelector(".dropzone-input") ||
+                !el.querySelector(".dropzone-trigger")
+            )
+                return;
+
             el.dataset.fileInit = "1"; // Guard anti-doublon
 
             // Récupération des options dynamiques via des attributs de données (data-*) optionnels
-            const maxSize = el.dataset.maxSize ? parseInt(el.dataset.maxSize, 10) : 10240;
-            const allowed = el.dataset.allowedTypes ? el.dataset.allowedTypes.split(",") : ["image/png", "image/jpeg", "image/jpg"];
+            const maxSize = el.dataset.maxSize
+                ? parseInt(el.dataset.maxSize, 10)
+                : 10240;
+            const allowed = el.dataset.allowedTypes
+                ? el.dataset.allowedTypes.split(",")
+                : ["image/png", "image/jpeg", "image/jpg"];
 
             // Instanciation
             new UIFileDropzone(el, {
                 maxSizeKb: maxSize,
-                allowedTypes: allowed
+                allowedTypes: allowed,
             });
         },
     );
@@ -67,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initUISelects();
     initUIFileDropzones();
     initUIAlerts();
+    UIDataTable.init();
 
     // DROPDOWNS
     document.querySelectorAll(".dropdown").forEach((element) => {
@@ -87,5 +97,8 @@ document.addEventListener("DOMContentLoaded", () => {
         trigger.addEventListener("click", () => {
             modal.open();
         });
-    });    
+    });
 });
+
+document.addEventListener("turbo:load", () => UIDataTable.init());
+document.addEventListener("turbolinks:load", () => UIDataTable.init());

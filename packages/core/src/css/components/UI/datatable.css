@@ -1,0 +1,956 @@
+@layer components {
+
+    /* ============================================================
+       2. WRAPPER
+       ============================================================ */
+    .dt-wrapper {
+        /* Typography */
+        --dt-font-family: 'Segoe UI', system-ui, sans-serif;
+        --dt-font-size-base: 13px;
+        --dt-font-size-sm: 11px;
+        --dt-font-size-xs: 10px;
+        /* Colors — surface */
+        --dt-bg-hover: #f4f3f1;
+        --dt-bg-selected: #eff6ff;
+        --dt-bg-info: #e6f1fb;
+        --dt-bg-success: #e1f5ee;
+        --dt-bg-warning: #faeeda;
+        --dt-bg-danger: #fcebeb;
+        --dt-bg-neutral: #f1efe8;
+        /* Colors — striped rows */
+        --dt-stripe-odd: var(--color-white);
+        --dt-stripe-even: var(--color-gray-300);
+        /* Colors — striped columns */
+        --dt-stripe-col-odd: var(--color-white);
+        --dt-stripe-col-even: var(--color-gray-300);
+        /* Colors — text */
+        --dt-text-primary: #1c1c1b;
+        --dt-text-secondary: #6b6b68;
+        --dt-text-tertiary: #9b9b98;
+        /* Colors — border */
+        --border-color-hover: rgba(0, 0, 0, 0.20);
+        --border-color-focus: rgba(149, 156, 49, 0.5);
+        
+        /* Spacing */
+        --dt-cell-px: 14px;
+        --dt-row-h: 40px;
+        --dt-header-h: 36px;
+
+        background: var(--color-white);
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: var(--ui-shadow-sm);
+        max-height: var(--dt-max-height, 600px);
+    }
+
+    /* ============================================================
+       3. TOOLBAR
+       ============================================================ */
+    .dt-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-bottom: 0.5px solid var(--border-color);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        row-gap: 8px;
+        background: var(--color-white);
+    }
+
+    .dt-toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .dt-toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    /* Search */
+    .dt-search-wrap {
+        position: relative;
+        flex: 1;
+        max-width: 280px;
+        min-width: 120px;
+    }
+
+    .dt-search-wrap svg {
+        position: absolute;
+        left: 9px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 14px;
+        height: 14px;
+        stroke: var(--dt-text-tertiary);
+        pointer-events: none;
+        flex-shrink: 0;
+    }
+
+    .dt-search-input {
+        width: 100%;
+        padding: 6px 10px 6px 30px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: var(--color-gray-100);
+        font-size: var(--dt-font-size-base);
+        color: inherit;
+        outline: none;
+        transition: border-color .15s;
+
+        &:focus {
+            border-color: var(--ui-focus-color);
+        }
+    
+        &::placeholder {
+            color: var(--dt-text-tertiary);
+        }
+    }
+
+
+    /* Page-size select */
+    .dt-page-size {
+        padding: 6px 8px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: var(--color-gray-100);
+        font-size: var(--dt-font-size-sm);
+        font-family: var(--dt-font-family);
+        color: var(--dt-text-secondary);
+        outline: none;
+        cursor: pointer;
+    }
+
+    /* Toolbar buttons */
+    .dt-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 10px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: transparent;
+        font-size: var(--dt-font-size-sm);
+        font-family: var(--dt-font-family);
+        color: var(--dt-text-secondary);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .12s, color .12s;
+        position: relative;
+    }
+
+    .dt-btn:hover {
+        background: var(--dt-bg-hover);
+        color: var(--dt-text-primary);
+    }
+
+    .dt-btn svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        flex-shrink: 0;
+    }
+
+    .dt-btn-badge {
+        font-size: var(--dt-font-size-xs);
+        padding: 1px 5px;
+        border-radius: var(--radius-pill);
+        background: var(--dt-bg-info);
+        color: var(--color-blue-400);
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    .dt-btn-icon {
+        padding: 6px;
+        border: 0.5px solid var(--border-color);
+    }
+
+    /* Export dropdown */
+    .dt-export-wrap {
+        position: relative;
+    }
+
+    .dt-export-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        background: var(--color-white);
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-md);
+        box-shadow: var(--ui-shadow);
+        z-index: 100;
+        min-width: 210px;
+        overflow: hidden;
+        display: none;
+    }
+
+    .dt-export-menu.open {
+        display: block;
+    }
+
+    .dt-export-section-label {
+        font-size: var(--dt-font-size-xs);
+        color: var(--dt-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        padding: 7px 12px 3px;
+        font-family: var(--dt-font-family);
+    }
+
+    .dt-export-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        font-size: var(--dt-font-size-base);
+        color: var(--dt-text-secondary);
+        cursor: pointer;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        font-family: var(--dt-font-family);
+        transition: background .1s, color .1s;
+    }
+
+    .dt-export-item:hover {
+        background: var(--dt-bg-hover);
+        color: var(--dt-text-primary);
+    }
+
+    .dt-export-item svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        flex-shrink: 0;
+    }
+
+    .dt-export-item .dt-export-fmt-badge {
+        margin-left: auto;
+        font-size: 9px;
+        padding: 1px 5px;
+        border-radius: 3px;
+        background: var(--dt-bg-neutral);
+        color: var(--dt-text-tertiary);
+        font-weight: 500;
+        letter-spacing: .03em;
+    }
+
+    .dt-export-sep {
+        height: 0.5px;
+        background: var(--border-color);
+        margin: 2px 0;
+    }
+
+    /* ============================================================
+           4. DATE FILTER BAR (above active filters)
+           ============================================================ */
+    .dt-datebar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        border-bottom: 0.5px solid var(--border-color);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        row-gap: 8px;
+        background: var(--color-gray-100);
+    }
+
+    .dt-datebar-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .dt-datebar-label {
+        font-size: var(--dt-font-size-sm);
+        color: var(--dt-text-secondary);
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .dt-datebar input[type="date"] {
+        padding: 4px 8px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--color-white);
+        font-size: var(--dt-font-size-sm);
+        font-family: var(--dt-font-family);
+        color: var(--dt-text-primary);
+        outline: none;
+        transition: border-color .12s;
+    }
+
+    .dt-datebar input[type="date"]:focus {
+        border-color: var(--border-color-focus);
+    }
+
+    .dt-datebar-sep {
+        font-size: var(--dt-font-size-xs);
+        color: var(--dt-text-tertiary);
+    }
+
+    .dt-datebar-divider {
+        width: 0.5px;
+        height: 20px;
+        background: var(--border-color-hover);
+        align-self: center;
+    }
+
+    /* ============================================================
+           5. ACTIVE-FILTER CHIPS BAR
+           ============================================================ */
+    .dt-filterbar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-bottom: 0.5px solid var(--border-color);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        row-gap: 5px;
+        background: var(--color-gray-100);
+    }
+
+    .dt-filterbar-label {
+        font-size: var(--dt-font-size-sm);
+        color: var(--dt-text-tertiary);
+        white-space: nowrap;
+    }
+
+    .dt-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 6px 2px 9px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-pill);
+        font-size: var(--dt-font-size-sm);
+        color: var(--dt-text-secondary);
+        background: var(--color-white);
+        line-height: 1.6;
+    }
+
+    .dt-chip-remove {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        color: var(--dt-text-tertiary);
+        border-radius: 50%;
+        padding: 0;
+        transition: background .1s, color .1s;
+        font-family: var(--dt-font-family);
+        font-size: 11px;
+        line-height: 1;
+        
+        &:hover {
+            background: var(--dt-bg-danger);
+            color: var(--color-destructive-600);
+        }
+    }
+
+
+    .dt-chip-clear {
+        font-size: var(--dt-font-size-sm);
+        color: var(--color-destructive-600);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: var(--radius-sm);
+        font-family: var(--dt-font-family);
+        margin-left: 2px;
+
+        &:hover {
+            background: var(--dt-bg-danger);
+        }
+    }
+
+
+    /* ============================================================
+           6. SCROLL CONTAINER
+           ============================================================ */
+    .dt-scroll {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: auto;
+        min-height: 0;
+    }
+
+    .dt-scroll::-webkit-scrollbar {
+        width: 3px;
+        height: 3px;
+    }
+
+    .dt-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .dt-scroll::-webkit-scrollbar-thumb {
+        background: var(--border-color-hover);
+        border-radius: 3px;
+    }
+
+    .dt-scroll::-webkit-scrollbar-thumb:hover {
+        background: var(--dt-text-tertiary);
+    }
+
+    /* ============================================================
+       7. TABLE — standalone styles (sans JS / without DataTable init)
+       ============================================================ */
+    table.dt-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    table.dt-table col.col-check {
+        width: 40px;
+    }
+
+    table.dt-table col.col-action {
+        width: 90px;
+    }
+
+    /* Header */
+    table.dt-table thead th {
+        height: var(--dt-header-h);
+        padding: 0 var(--dt-cell-px);
+        font-size: var(--dt-font-size-sm);
+        font-weight: 500;
+        color: var(--dt-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        background: var(--color-gray-100);
+        border-bottom: 0.5px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        user-select: none;
+        white-space: nowrap;
+        vertical-align: bottom;
+        padding-bottom: 6px;
+    }
+
+    table.dt-table thead th.sortable {
+        cursor: pointer;
+    }
+
+    table.dt-table thead th.sortable:hover {
+        color: var(--dt-text-primary);
+    }
+
+    table.dt-table thead th.sort-asc {
+        color: var(--color-blue-400);
+    }
+
+    table.dt-table thead th.sort-desc {
+        color: var(--color-blue-400);
+    }
+
+    .dt-th-inner {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .dt-sort-icon {
+        display: inline-flex;
+        align-items: center;
+        opacity: 0.3;
+        flex-shrink: 0;
+    }
+
+    .dt-sort-icon svg {
+        width: 12px;
+        height: 12px;
+        stroke: currentColor;
+    }
+
+    th.sort-asc .dt-sort-icon,
+    th.sort-desc .dt-sort-icon {
+        opacity: 1;
+        color: var(--color-blue-400);
+    }
+
+    /* Sub-row filter inputs */
+    .dt-th-filter {
+        margin-top: 4px;
+    }
+
+    .dt-th-filter input,
+    .dt-th-filter select {
+        width: 100%;
+        padding: 3px 6px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--color-white);
+        font-size: var(--dt-font-size-xs);
+        font-family: var(--dt-font-family);
+        color: var(--dt-text-primary);
+        outline: none;
+    }
+
+    .dt-th-filter input:focus,
+    .dt-th-filter select:focus {
+        border-color: var(--border-color-focus);
+    }
+
+    /* Cells */
+    table.dt-table tbody td {
+        height: var(--dt-row-h);
+        padding: 0 var(--dt-cell-px);
+        font-size: var(--dt-font-size-base);
+        color: var(--dt-text-primary);
+        border-bottom: 0.5px solid var(--border-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+        transition: background .08s;
+    }
+
+    table.dt-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    table.dt-table tbody tr:hover td {
+        background: var(--dt-bg-hover);
+    }
+
+    table.dt-table tbody tr.dt-selected td {
+        background: var(--dt-bg-selected);
+    }
+
+    /* ── Striped rows (comme Bootstrap .table-striped) ── */
+    table.dt-table.dt-table-striped tbody tr:nth-child(odd) td {
+        background-color: var(--dt-stripe-odd);
+    }
+
+    table.dt-table.dt-table-striped tbody tr:nth-child(even) td {
+        background-color: var(--dt-stripe-even);
+    }
+
+    table.dt-table.dt-table-striped tbody tr:hover td {
+        background: var(--dt-bg-hover);
+    }
+
+    /* ── Striped columns ── */
+    table.dt-table.dt-table-striped-cols tbody td:nth-child(odd) {
+        background-color: var(--dt-stripe-col-odd);
+    }
+
+    table.dt-table.dt-table-striped-cols tbody td:nth-child(even) {
+        background-color: var(--dt-stripe-col-even);
+    }
+
+    table.dt-table.dt-table-striped-cols thead th:nth-child(even) {
+        background-color: var(--dt-stripe-col-even);
+    }
+
+    table.dt-table.dt-table-striped-cols tbody tr:hover td {
+        background: var(--dt-bg-hover);
+    }
+
+    /* ── Bordered ── */
+    table.dt-table.dt-table-bordered td,
+    table.dt-table.dt-table-bordered th {
+        border: 0.5px solid var(--border-color) !important;
+    }
+
+    /* ── Compact (dense) ── */
+    table.dt-table.dt-table-compact tbody td {
+        height: 30px;
+    }
+
+    table.dt-table.dt-table-compact thead th {
+        height: 28px;
+    }
+
+    /* Checkbox column */
+    .dt-cell-check {
+        text-align: center;
+        padding: 0 10px !important;
+    }
+
+    .dt-check {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--color-blue-400);
+        cursor: pointer;
+    }
+
+    /* Actions column */
+    .dt-cell-actions {
+        text-align: center;
+    }
+
+    .dt-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+    }
+
+    .dt-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: transparent;
+        cursor: pointer;
+        color: var(--dt-text-secondary);
+        transition: background .1s, color .1s, border-color .1s;
+        padding: 0;
+    }
+
+    .dt-action-btn:hover {
+        background: var(--dt-bg-hover);
+        color: var(--dt-text-primary);
+    }
+
+    .dt-action-btn.danger:hover {
+        background: var(--dt-bg-danger);
+        color: var(--color-destructive-600);
+        border-color: var(--color-destructive-600);
+    }
+
+    .dt-action-btn svg {
+        width: 13px;
+        height: 13px;
+        stroke: currentColor;
+    }
+
+    /* Empty state */
+    .dt-empty {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--dt-text-tertiary);
+        font-size: var(--dt-font-size-base);
+    }
+
+    .dt-empty svg {
+        width: 36px;
+        height: 36px;
+        stroke: var(--border-color-hover);
+        margin-bottom: 12px;
+        display: block;
+        margin-inline: auto;
+    }
+
+    /* Loading skeleton */
+    .dt-skeleton-row td {
+        animation: dt-pulse 1.4s ease-in-out infinite;
+    }
+
+    .dt-skeleton-cell {
+        height: 12px;
+        border-radius: 4px;
+        background: var(--dt-bg-hover);
+        display: inline-block;
+    }
+
+    @keyframes dt-pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.4;
+        }
+    }
+
+    /* ============================================================
+       8. BADGES / STATUS
+       ============================================================ */
+    .dt-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: var(--radius-pill);
+        font-size: var(--dt-font-size-sm);
+        font-weight: 500;
+        line-height: 1.5;
+        white-space: nowrap;
+    }
+
+    .dt-badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+    }
+
+    .dt-badge-success {
+        background: var(--dt-bg-success);
+        color: var(--color-success-600);
+    }
+
+    .dt-badge-warning {
+        background: var(--dt-bg-warning);
+        color: var(--color-primary-800);
+    }
+
+    .dt-badge-danger {
+        background: var(--dt-bg-danger);
+        color: var(--color-destructive-600);
+    }
+
+    .dt-badge-neutral {
+        background: var(--dt-bg-neutral);
+        color: var(--dt-text-secondary);
+    }
+
+    .dt-badge-info {
+        background: var(--dt-bg-info);
+        color: var(--color-blue-400);
+    }
+
+    /* ============================================================
+       9. FOOTER — PAGINATION + COUNT
+       ============================================================ */
+    .dt-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        border-top: 0.5px solid var(--border-color);
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        gap: 8px;
+        background: var(--color-white);
+    }
+
+    .dt-count {
+        font-size: var(--dt-font-size-sm);
+        color: var(--dt-text-secondary);
+        white-space: nowrap;
+    }
+
+    .dt-count strong {
+        color: var(--dt-text-primary);
+        font-weight: 500;
+    }
+
+    /* ============================================================
+       10. PAGINATION
+       ============================================================ */
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        list-style: none;
+        flex-wrap: wrap;
+    }
+
+    /* pill */
+    .pagination-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        height: 30px;
+        padding: 0 7px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-pill);
+        background: transparent;
+        font-size: var(--dt-font-size-sm);
+        font-family: var(--dt-font-family);
+        color: var(--dt-text-secondary);
+        cursor: pointer;
+        transition: background .1s, color .1s, border-color .1s;
+        line-height: 1;
+    }
+
+    .pagination-pill:hover {
+        background: var(--dt-bg-hover);
+        color: var(--dt-text-primary);
+    }
+
+    .pagination-pill.active,
+    .pagination-pill[aria-current="page"] {
+        background: var(--dt-bg-info);
+        border-color: transparent;
+        color: var(--color-blue-400);
+        font-weight: 500;
+    }
+
+    .pagination-pill:disabled,
+    .pagination-pill[disabled] {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .pagination-pill svg {
+        width: 13px;
+        height: 13px;
+        stroke: currentColor;
+    }
+
+    .pagination-dots {
+        font-size: var(--dt-font-size-sm);
+        color: var(--dt-text-tertiary);
+        padding: 0 2px;
+        line-height: 30px;
+    }
+
+    /* card */
+    .pagination-card {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 8px;
+        border: 0.5px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: var(--color-white);
+        font-size: var(--dt-font-size-sm);
+        font-family: var(--dt-font-family);
+        color: var(--dt-text-secondary);
+        cursor: pointer;
+        transition: background .1s, color .1s;
+    }
+
+    .pagination-card:hover {
+        background: var(--dt-bg-hover);
+    }
+
+    .pagination-card.active {
+        background: var(--dt-text-primary);
+        color: var(--color-white);
+        border-color: var(--dt-text-primary);
+        font-weight: 500;
+    }
+
+    .pagination-card:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* circle */
+    .pagination-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: 0.5px solid var(--border-color);
+        border-radius: 50%;
+        background: transparent;
+        font-size: var(--dt-font-size-sm);
+        font-family: var(--dt-font-family);
+        color: var(--dt-text-secondary);
+        cursor: pointer;
+        transition: background .1s, color .1s;
+    }
+
+    .pagination-circle:hover {
+        background: var(--dt-bg-hover);
+    }
+
+    .pagination-circle.active {
+        background: var(--color-blue-400);
+        color: #fff;
+        border-color: transparent;
+        font-weight: 500;
+    }
+
+    .pagination-circle:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* bar */
+    .pagination-bar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        height: 30px;
+        padding: 0 6px;
+        border: none;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        font-size: var(--dt-font-size-sm);
+        font-family: var(--dt-font-family);
+        color: var(--dt-text-secondary);
+        cursor: pointer;
+        transition: color .1s, border-color .1s;
+        border-radius: 0;
+    }
+
+    .pagination-bar:hover {
+        color: var(--dt-text-primary);
+    }
+
+    .pagination-bar.active {
+        color: var(--color-blue-400);
+        border-bottom-color: var(--color-blue-400);
+        font-weight: 500;
+    }
+
+    .pagination-bar:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* ============================================================
+       11. RESPONSIVE
+       ============================================================ */
+    @media (max-width: 640px) {
+        .dt-toolbar-right {
+            flex-wrap: wrap;
+        }
+
+        .dt-search-wrap {
+            max-width: 100%;
+        }
+
+        .dt-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .dt-label-hide {
+            display: none;
+        }
+
+        table.dt-table {
+            table-layout: auto;
+        }
+
+        table.dt-table thead th,
+        table.dt-table tbody td {
+            white-space: nowrap;
+        }
+    }
+}
