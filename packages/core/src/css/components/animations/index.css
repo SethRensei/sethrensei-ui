@@ -1,42 +1,251 @@
+@import "./animate.css";
 @import "./fade.css";
+@import "./flip.css";
 @import "./slide.css";
 @import "./zoom.css";
 
 @layer utilities {
-    .animate-ui {
-        animation-duration: 300ms;
+
+    /* --- Variables d'easing (custom properties) ----------- */
+    :root {
+        --ease-in: cubic-bezier(0.4, 0, 1, 1);
+        --ease-out: cubic-bezier(0, 0, 0.2, 1);
+        --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+        --ease-linear: linear;
+        --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+        --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        --ease-overshoot: cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        --ease-snappy: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        --ease-anticipate: cubic-bezier(0.36, 0.66, 0.04, 1);
+    }
+
+    /*
+           * État initial : tout élément [data-animation] est invisible
+           * tant que l'AnimationObserver n'a pas déclenché [data-anim-playing].
+           * On utilise opacity:0 + will-change pour préparer le GPU.
+           */
+    [data-animation]:not([data-anim-playing]) {
+        opacity: 0;
+        will-change: opacity, transform;
+    }
+
+    /*
+           * État actif : l'observer ajoute data-anim-playing,
+           * qui réactive opacity et applique l'animation via CSS var
+           * injectée dynamiquement par JS (--ui-anim-name, etc.)
+           */
+    [data-anim-playing] {
+        opacity: 1;
+        animation-name: var(--ui-anim-name);
+        animation-duration: var(--ui-anim-duration, 500ms);
+        animation-timing-function: var(--ui-anim-easing, var(--ease-in));
+        animation-delay: var(--ui-anim-delay, 0ms);
         animation-fill-mode: both;
     }
 
-    .ease-linear {
-        animation-timing-function: linear;
+    .ui-anim-flip-x {
+        animation-name: ui-flip-x;
     }
 
-    .ease-in {
-        animation-timing-function: ease-in;
+    .ui-anim-flip-y {
+        animation-name: ui-flip-y;
     }
 
-    .ease-out {
-        animation-timing-function: ease-out;
+    .ui-anim-flip-in {
+        animation-name: ui-flip-in;
     }
 
-    .ease-in-out {
-        animation-timing-function: ease-in-out;
+    .ui-anim-flip-out {
+        animation-name: ui-flip-out;
     }
 
-    .infinite {
-        animation-iteration-count: infinite;
+    .ui-anim-slide-in-up {
+        animation-name: ui-slide-in-up;
     }
 
-    .once {
-        animation-iteration-count: 1;
+    .ui-anim-slide-in-down {
+        animation-name: ui-slide-in-down;
     }
 
-    .reverse {
-        animation-direction: reverse;
+    .ui-anim-slide-in-left {
+        animation-name: ui-slide-in-left;
     }
 
-    .alternate {
-        animation-direction: alternate;
+    .ui-anim-slide-in-right {
+        animation-name: ui-slide-in-right;
+    }
+
+    .ui-anim-slide-out-down {
+        animation-name: ui-slide-out-down;
+    }
+
+    .ui-anim-slide-out-up {
+        animation-name: ui-slide-out-up;
+    }
+
+    .ui-anim-slide-out-left {
+        animation-name: ui-slide-out-left;
+    }
+
+    .ui-anim-slide-out-right {
+        animation-name: ui-slide-out-right;
+    }
+
+    .ui-anim-zoom-fade {
+        animation-name: ui-zoom-fade;
+    }
+
+    .ui-anim-zoom-fade-out {
+        animation-name: ui-zoom-fade-out;
+    }
+
+    .ui-anim-zoom-in {
+        animation-name: ui-zoom-in;
+    }
+
+    .ui-anim-zoom-out {
+        animation-name: ui-zoom-out;
+    }
+
+    .ui-anim-fade-in {
+        animation-name: ui-fade-in;
+    }
+
+    .ui-anim-fade-out {
+        animation-name: ui-fade-out;
+    }
+
+    .ui-anim-fade-in-up {
+        animation-name: ui-fade-in-up;
+    }
+
+    .ui-anim-fade-in-down {
+        animation-name: ui-fade-in-down;
+    }
+
+    .ui-anim-fade-in-left {
+        animation-name: ui-fade-in-left;
+    }
+
+    .ui-anim-fade-in-right {
+        animation-name: ui-fade-in-right;
+    }
+
+    .ui-anim-fade-out-down {
+        animation-name: ui-fade-out-down;
+    }
+
+    .ui-anim-fade-out-up {
+        animation-name: ui-fade-out-up;
+    }
+
+    .ui-anim-fade-out-left {
+        animation-name: ui-fade-out-left;
+    }
+
+    .ui-anim-fade-out-right {
+        animation-name: ui-fade-out-right;
+    }
+
+    .ui-anim-rotate-in {
+        animation-name: ui-rotate-in;
+    }
+
+    .ui-anim-blur-in {
+        animation-name: ui-blur-in;
+    }
+
+    .ui-anim-skew-in {
+        animation-name: ui-skew-in;
+    }
+
+    .ui-anim-pop {
+        animation-name: ui-pop;
+    }
+
+    .ui-anim-roll-in {
+        animation-name: ui-roll-in;
+    }
+
+    .ui-anim-unfold {
+        animation-name: ui-unfold;
+    }
+
+    .ui-anim-glitch {
+        animation-name: ui-glitch;
+    }
+
+    .ui-anim-drop {
+        animation-name: ui-drop;
+    }
+
+    .ui-anim-rise {
+        animation-name: ui-rise;
+    }
+
+    .ui-anim-elastic {
+        animation-name: ui-elastic;
+    }
+
+    .ui-anim-swing {
+        animation-name: ui-swing;
+    }
+
+    .ui-anim-swing-out {
+        animation-name: ui-swing-out;
+    }
+
+    .ui-anim-rubber {
+        animation-name: ui-rubber;
+    }
+
+    .ui-anim-newspaper {
+        animation-name: ui-newspaper;
+    }
+
+    .ui-anim-newspaper-out {
+        animation-name: ui-newspaper-out;
+    }
+
+    /* Modificateurs d'easing utilisables en classe */
+    .ui-ease-in {
+        --ui-anim-easing: var(--ease-in);
+    }
+
+    .ui-ease-out {
+        --ui-anim-easing: var(--ease-out);
+    }
+
+    .ui-ease-in-out {
+        --ui-anim-easing: var(--ease-in-out);
+    }
+
+    .ui-ease-linear {
+        --ui-anim-easing: var(--ease-linear);
+    }
+
+    .ui-ease-spring {
+        --ui-anim-easing: var(--ease-spring);
+    }
+
+    .ui-ease-bounce {
+        --ui-anim-easing: var(--ease-bounce);
+    }
+
+    .ui-ease-elastic {
+        --ui-anim-easing: var(--ease-elastic);
+    }
+
+    .ui-ease-overshoot {
+        --ui-anim-easing: var(--ease-overshoot);
+    }
+
+    .ui-ease-snappy {
+        --ui-anim-easing: var(--ease-snappy);
+    }
+
+    .ui-ease-anticipate {
+        --ui-anim-easing: var(--ease-anticipate);
     }
 }

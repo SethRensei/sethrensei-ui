@@ -138,4 +138,41 @@
         border: 1px solid rgba(0, 0, 0, .15);
         background: rgba(255, 255, 255, .9);
     }
+
+    pre {
+        font-family: 'DM Mono', monospace;
+        font-size: 12px;
+        background: var(--color-zinc-800);
+        border: 1px solid var(--border-color);
+        padding: 1.5rem;
+        border-radius: 12px;
+        overflow-x: auto;
+        line-height: 1.75;
+        color: var(--color-indigo-400);
+    }
+
+    pre .kw {
+        color: var(--color-indigo-400);
+    }
+
+    pre .str {
+        color: var(--color-success-300);
+    }
+
+    pre .cm {
+        color: #353558;
+        font-style: italic;
+    }
+
+    pre .fn {
+        color: var(--color-primary-700);
+    }
+
+    pre .val {
+        color: #e07060;
+    }
+
+    pre .at {
+        color: var(--color-sky-800);
+    }
 }

@@ -1,65 +1,75 @@
-@layer utilities {
-    .animate-slide-in-up {
-        animation-name: ui-slide-in-up;
+@keyframes ui-slide-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(100%)
     }
 
-    .animate-slide-in-down {
-        animation-name: ui-slide-in-down;
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+@keyframes ui-slide-in-down {
+    from {
+        opacity: 0;
+        transform: translateY(-100%)
     }
 
-    .animate-slide-in-left {
-        animation-name: ui-slide-in-left;
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+@keyframes ui-slide-in-left {
+    from {
+        opacity: 0;
+        transform: translateX(-100%)
     }
 
-    .animate-slide-in-right {
-        animation-name: ui-slide-in-right;
+    to {
+        opacity: 1;
+        transform: translateX(0)
+    }
+}
+
+@keyframes ui-slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(100%)
     }
 
-    @keyframes ui-slide-in-up {
-        from {
-            opacity: 0;
-            transform: translateY(100%)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
+    to {
+        opacity: 1;
+        transform: translateX(0)
     }
+}
 
-    @keyframes ui-slide-in-down {
-        from {
-            opacity: 0;
-            transform: translateY(-100%)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
+@keyframes modal-slide-out-down {
+    to {
+        opacity: 0;
+        transform: translateY(100%)
     }
+}
 
-    @keyframes ui-slide-in-left {
-        from {
-            opacity: 0;
-            transform: translateX(-100%)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateX(0)
-        }
+@keyframes modal-slide-out-up {
+    to {
+        opacity: 0;
+        transform: translateY(-100%)
     }
+}
 
-    @keyframes ui-slide-in-right {
-        from {
-            opacity: 0;
-            transform: translateX(100%)
-        }
+@keyframes modal-slide-out-left {
+    to {
+        opacity: 0;
+        transform: translateX(-100%)
+    }
+}
 
-        to {
-            opacity: 1;
-            transform: translateX(0)
-        }
+@keyframes modal-slide-out-right {
+    to {
+        opacity: 0;
+        transform: translateX(100%)
     }
 }

@@ -1,40 +1,64 @@
-@layer utilities {
-    .animate-zoom-in {
-        animation-name: ui-zoom-in;
+@keyframes ui-zoom-fade {
+    from {
+        opacity: 0;
+        transform: scale(.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes ui-zoom-fade-out {
+    to {
+        opacity: 0;
+        transform: scale(.92);
+    }
+}
+
+@keyframes ui-zoom-in {
+    0% {
+        opacity: 0;
+        transform: scale(.3)
     }
 
-    .animate-zoom-out {
-        animation-name: ui-zoom-out;
+    60% {
+        opacity: 1
     }
 
-    @keyframes ui-zoom-in {
-        0% {
-            opacity: 0;
-            transform: scale(.3)
-        }
+    100% {
+        transform: scale(1)
+    }
+}
 
-        60% {
-            opacity: 1
-        }
-
-        100% {
-            transform: scale(1)
-        }
+@keyframes ui-zoom-out {
+    0% {
+        opacity: 1;
+        transform: scale(1)
     }
 
-    @keyframes ui-zoom-out {
-        0% {
-            opacity: 1;
-            transform: scale(1)
-        }
+    50% {
+        opacity: 0;
+        transform: scale(.3)
+    }
 
-        50% {
-            opacity: 0;
-            transform: scale(.3)
-        }
+    100% {
+        opacity: 0
+    }
+}
 
-        100% {
-            opacity: 0
-        }
+@keyframes ui-pop {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    70% {
+        transform: scale(1.08);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
     }
 }

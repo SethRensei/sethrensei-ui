@@ -1,93 +1,95 @@
-@layer utilities {
-    .animate-fade-in {
-        animation-name: ui-fade-in;
+@keyframes ui-fade-in {
+    from {
+        opacity: 0
     }
 
-    .animate-fade-out {
-        animation-name: ui-fade-out;
+    to {
+        opacity: 1
+    }
+}
+
+@keyframes ui-fade-out {
+    from {
+        opacity: 1
     }
 
-    .animate-fade-in-up {
-        animation-name: ui-fade-in-up;
+    to {
+        opacity: 0
+    }
+}
+
+@keyframes ui-fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px)
     }
 
-    .animate-fade-in-down {
-        animation-name: ui-fade-in-down;
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+@keyframes ui-fade-in-down {
+    from {
+        opacity: 0;
+        transform: translateY(-20px)
     }
 
-    .animate-fade-in-left {
-        animation-name: ui-fade-in-left;
+    to {
+        opacity: 1;
+        transform: translateY(0)
+    }
+}
+
+@keyframes ui-fade-in-left {
+    from {
+        opacity: 0;
+        transform: translateX(-20px)
     }
 
-    .animate-fade-in-right {
-        animation-name: ui-fade-in-right;
+    to {
+        opacity: 1;
+        transform: translateX(0)
+    }
+}
+
+@keyframes ui-fade-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(20px)
     }
 
-    @keyframes ui-fade-in {
-        from {
-            opacity: 0
-        }
-
-        to {
-            opacity: 1
-        }
+    to {
+        opacity: 1;
+        transform: translateX(0)
     }
+}
 
-    @keyframes ui-fade-out {
-        from {
-            opacity: 1
-        }
-
-        to {
-            opacity: 0
-        }
+@keyframes modal-fade-out-down {
+    to {
+        opacity: 0;
+        transform: translateY(20px)
     }
+}
 
-    @keyframes ui-fade-in-up {
-        from {
-            opacity: 0;
-            transform: translateY(20px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
+@keyframes modal-fade-out-up {
+    to {
+        opacity: 0;
+        transform: translateY(-20px)
     }
+}
 
-    @keyframes ui-fade-in-down {
-        from {
-            opacity: 0;
-            transform: translateY(-20px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0)
-        }
+@keyframes modal-fade-out-left {
+    to {
+        opacity: 0;
+        transform: translateX(-20px)
     }
+}
 
-    @keyframes ui-fade-in-left {
-        from {
-            opacity: 0;
-            transform: translateX(-20px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateX(0)
-        }
-    }
-
-    @keyframes ui-fade-in-right {
-        from {
-            opacity: 0;
-            transform: translateX(20px)
-        }
-
-        to {
-            opacity: 1;
-            transform: translateX(0)
-        }
+@keyframes modal-fade-out-right {
+    to {
+        opacity: 0;
+        transform: translateX(20px)
     }
 }

@@ -1,5 +1,4 @@
 import Alpine from "alpinejs";
-
 import { UISelect } from "./UI/select-search.js";
 import { Dropdown } from "./Classic/dropdown.js";
 import { Navbar } from "./Layout/navbar.js";
@@ -8,17 +7,18 @@ import { UIFileDropzone } from "./UI/file-dropzone.js";
 import { UIAlert } from "./UI/alert.js";
 import { uiToast } from "./UI/toast.js";
 import { UIDataTable } from "./UI/datatable.js";
+import { AnimationObserver } from "./Classic/animations.js";
 
+/* ── Alpine ─────────────────────────────────────────────────── */
+window.uiToast = uiToast;
 Alpine.start();
 
-/* ── 1. INITIALISATEUR Select With Search ───────────────────── */
+/* ── Initialisateurs (tous idempotents via guards data-*) ───── */
 function initUISelects(root = document) {
     root.querySelectorAll(".ui-select:not([data-ui-select-init])").forEach(
         (el) => {
-            // Skip disabled shells with no dropdown options
             if (!el.querySelector(".ui-select-trigger")) return;
             el.dataset.uiSelectInit = "1";
-            // Store placeholder text before first render overwrites it
             const ph = el.querySelector(".ui-select-placeholder");
             if (ph) el.dataset.placeholder = ph.textContent.trim();
             new UISelect(el);
@@ -26,38 +26,27 @@ function initUISelects(root = document) {
     );
 }
 
-/* ── 2. INITIALISATEUR FILE DROPZONES ───────────────── */
 function initUIFileDropzones(root = document) {
-    // Ciblage via la classe de bloc racine .form-file-group
     root.querySelectorAll(".form-file-group:not([data-file-init])").forEach(
         (el) => {
-            // Vérification de sécurité élémentaire (présence de l'input et du trigger)
             if (
                 !el.querySelector(".dropzone-input") ||
                 !el.querySelector(".dropzone-trigger")
             )
                 return;
-
-            el.dataset.fileInit = "1"; // Guard anti-doublon
-
-            // Récupération des options dynamiques via des attributs de données (data-*) optionnels
-            const maxSize = el.dataset.maxSize
-                ? parseInt(el.dataset.maxSize, 10)
-                : 10240;
-            const allowed = el.dataset.allowedTypes
-                ? el.dataset.allowedTypes.split(",")
-                : ["image/png", "image/jpeg", "image/jpg"];
-
-            // Instanciation
+            el.dataset.fileInit = "1";
             new UIFileDropzone(el, {
-                maxSizeKb: maxSize,
-                allowedTypes: allowed,
+                maxSizeKb: el.dataset.maxSize
+                    ? parseInt(el.dataset.maxSize, 10)
+                    : 10240,
+                allowedTypes: el.dataset.allowedTypes
+                    ? el.dataset.allowedTypes.split(",")
+                    : ["image/png", "image/jpeg", "image/jpg"],
             });
         },
     );
 }
 
-/* ── 3. INITIALISATEUR ALERTS ─────────────────────────── */
 function initUIAlerts(root = document) {
     root.querySelectorAll(
         ".ui-alert[data-dismissible]:not([data-alert-init])",
@@ -67,38 +56,48 @@ function initUIAlerts(root = document) {
     });
 }
 
-/* ── 4. INITIALISATEUR TOASTS  ─────────────────────────── */
-window.uiToast = uiToast;
+function initDropdowns(root = document) {
+    root.querySelectorAll(".dropdown:not([data-dropdown-init])").forEach(
+        (el) => {
+            el.dataset.dropdownInit = "1";
+            new Dropdown(el);
+        },
+    );
+}
 
-/* ── END. CYCLE DE VIE & ÉVÉNEMENTS ───────────────────── */
-document.addEventListener("DOMContentLoaded", () => {
-    // Initialisation des composants à états complexes / asynchrones
+function initNavbars(root = document) {
+    root.querySelectorAll(".navbar:not([data-navbar-init])").forEach((el) => {
+        el.dataset.navbarInit = "1";
+        new Navbar(el);
+    });
+}
+
+function initModals(root = document) {
+    root.querySelectorAll("[data-modal-target]:not([data-modal-init])").forEach(
+        (trigger) => {
+            const target = document.querySelector(trigger.dataset.modalTarget);
+            if (!target) return;
+            trigger.dataset.modalInit = "1";
+            const modal = new Modal(target);
+            trigger.addEventListener("click", () => modal.open());
+        },
+    );
+}
+
+/* ── Point d'entrée unique ──────────────────────────────────── */
+function init() {
     initUISelects();
     initUIFileDropzones();
     initUIAlerts();
+    initDropdowns();
+    initNavbars();
+    initModals();
     UIDataTable.init();
+    AnimationObserver.init();
+    
+}
 
-    // DROPDOWNS
-    document.querySelectorAll(".dropdown").forEach((element) => {
-        new Dropdown(element);
-    });
-
-    // NAVBAR
-    document.querySelectorAll(".navbar").forEach((element) => {
-        new Navbar(element);
-    });
-
-    // MODALS
-    document.querySelectorAll("[data-modal-target]").forEach((trigger) => {
-        const target = document.querySelector(trigger.dataset.modalTarget);
-        if (!target) return;
-
-        const modal = new Modal(target);
-        trigger.addEventListener("click", () => {
-            modal.open();
-        });
-    });
-});
-
-document.addEventListener("turbo:load", () => UIDataTable.init());
-document.addEventListener("turbolinks:load", () => UIDataTable.init());
+/* ── Cycle de vie : fonctionne avec ou sans Turbo ───────────── */
+document.addEventListener("DOMContentLoaded", init);
+document.addEventListener("turbo:load", init);
+document.addEventListener("turbolinks:load", init);
