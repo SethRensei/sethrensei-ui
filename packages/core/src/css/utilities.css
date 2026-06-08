@@ -219,7 +219,15 @@
     |--------------------------------------------------------------------------
     */
 
-    .shadow-card {
+    .ui-shadow-sm {
         box-shadow: var(--ui-shadow-sm);
+    }
+
+    .ui-shadow-md {
+        box-shadow: var(--ui-shadow);
+    }
+
+    .ui-shadow-lg {
+        box-shadow: var(--ui-shadow-lg);
     }
 }

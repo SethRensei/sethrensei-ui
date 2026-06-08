@@ -1,6 +1,13 @@
 import Alpine from "alpinejs";
 import { UISelect } from "./UI/select-search.js";
 import { Dropdown } from "./Classic/dropdown.js";
+import { DropdownHover } from "./Classic/dropdown.js";
+import { DropdownMega } from "./Classic/dropdown.js";
+import { DropdownSelect } from "./Classic/dropdown.js";
+import { DropdownMultiSelect } from "./Classic/dropdown.js";
+import { DropdownNested } from "./Classic/dropdown.js";
+import { DropdownCommand } from "./Classic/dropdown.js";
+import { DropdownContext } from "./Classic/dropdown.js";
 import { Navbar } from "./Layout/navbar.js";
 import { Modal } from "./Classic/modal.js";
 import { UIFileDropzone } from "./UI/file-dropzone.js";
@@ -57,10 +64,22 @@ function initUIAlerts(root = document) {
 }
 
 function initDropdowns(root = document) {
+    const TYPE_MAP = {
+        default: Dropdown,
+        hover: DropdownHover,
+        mega: DropdownMega,
+        select: DropdownSelect,
+        "multi-select": DropdownMultiSelect,
+        nested: DropdownNested,
+        command: DropdownCommand,
+        context: DropdownContext,
+    };
+    const instances = {};
     root.querySelectorAll(".dropdown:not([data-dropdown-init])").forEach(
         (el) => {
             el.dataset.dropdownInit = "1";
-            new Dropdown(el);
+            const T = TYPE_MAP[el.dataset.ddType ?? "default"] ?? Dropdown;
+            instances[el.id] = new T(el);
         },
     );
 }

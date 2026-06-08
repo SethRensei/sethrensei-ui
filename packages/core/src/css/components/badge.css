@@ -1,4 +1,8 @@
 @layer components {
+    .badge-container {
+        position: relative;
+    }
+
     .badge {
         --badge-radius: var(--radius-md);
         display: inline-flex;
@@ -27,5 +31,20 @@
     .badge-circle {
         padding: .7rem;
         --badge-radius: 9999px;
+    }
+
+    .badge-notif {
+        position: absolute;
+        top:-7px;
+        right: -7px;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        font-weight: 700;
+        border: 2px solid var(--border-color);
+        border-radius: 50%;
     }
 }
