@@ -250,6 +250,8 @@ export class UIDataTable {
     static #instances = new Map();
 
     constructor(tableEl) {
+        // Empêche la double-initialisation si Turbo rejoue avant destroy
+        if (tableEl.hasAttribute("data-ui-init")) return;
         this.table = tableEl;
         this.id = tableEl.id || `dt_${Math.random().toString(36).slice(2, 8)}`;
         if (!tableEl.id) tableEl.id = this.id;
@@ -284,13 +286,12 @@ export class UIDataTable {
     }
 
     /* ── STATIC ── */
-    static init() {
-        document
-            .querySelectorAll('table.datatable, table[data-datatable="true"]')
-            .forEach((t) => {
-                if (!UIDataTable.#instances.has(t.id || "_"))
-                    new UIDataTable(t);
-            });
+    static init(root = document) {
+        root.querySelectorAll(
+            'table.datatable, table[data-datatable="true"]',
+        ).forEach((t) => {
+            if (!UIDataTable.#instances.has(t.id || "_")) new UIDataTable(t);
+        });
     }
     static getInstance(id) {
         return UIDataTable.#instances.get(id);
@@ -298,6 +299,7 @@ export class UIDataTable {
 
     /* ── INIT ── */
     _init() {
+        this.table.setAttribute("data-ui-init", "1"); // ← garde Turbo
         this._parseColumns();
         this._parseRows();
         this._restoreState();
@@ -308,9 +310,15 @@ export class UIDataTable {
     _parseColumns() {
         const ths = this.table.querySelectorAll("thead tr:first-child th");
         ths.forEach((th, i) => {
+            // ── Lire le label ORIGINAL avant que _buildThead ne modifie le th ──
+            // On stocke sur le th lui-même pour survivre au snapshot Turbo
+            if (!th.dataset.originalLabel) {
+                th.dataset.originalLabel = th.textContent.trim();
+            }
             this._columns.push({
                 index: i,
                 label: th.textContent.trim(),
+                label: th.dataset.originalLabel, // ← label stable
                 sortable: th.dataset.sorted === "true",
                 searchable: th.dataset.search === "true",
                 filterable: th.dataset.filter === "true",
@@ -597,6 +605,11 @@ export class UIDataTable {
             const col = this._columns[i];
             if (!col) return;
 
+            // ── Nettoyage défensif : retire ce qu'une init précédente aurait laissé ──
+            th.querySelector(".dt-th-inner")?.remove();
+            th.querySelector(".dt-th-filter")?.remove();
+            th.removeEventListener("click", th._sortHandler); // voir ci-dessous
+
             // Checkbox column
             if (th.classList.contains("col-check")) {
                 th.innerHTML =
@@ -619,9 +632,10 @@ export class UIDataTable {
                 const icon = el("span", { cls: "dt-sort-icon" });
                 icon.innerHTML = Icons.sortNone;
                 inner.appendChild(icon);
-                th.addEventListener("click", () =>
-                    this._cycleSort(i, th, icon),
-                );
+
+                // Stocker le handler pour pouvoir le retirer au prochain cycle
+                th._sortHandler = () => this._cycleSort(i, th, icon);
+                th.addEventListener("click", th._sortHandler);
                 this._syncSortIcon(i, th, icon);
             }
 
@@ -1149,10 +1163,40 @@ export class UIDataTable {
         dispatch("datatable:reset", { id: this.id });
     }
     destroy() {
+        // ── Remettre les <th> dans leur état original ──
+        Array.from(
+            this.table.querySelectorAll("thead tr:first-child th"),
+        ).forEach((th) => {
+            const original = th.dataset.originalLabel;
+            if (!original) return;
+            if (
+                th.classList.contains("col-check") ||
+                th.classList.contains("col-action")
+            )
+                return;
+
+            // Retirer les éléments ajoutés par _buildThead
+            th.querySelector(".dt-th-inner")?.remove();
+            th.querySelector(".dt-th-filter")?.remove();
+            if (th._sortHandler) {
+                th.removeEventListener("click", th._sortHandler);
+                delete th._sortHandler;
+            }
+            th.classList.remove("sortable", "sort-asc", "sort-desc");
+            th.removeAttribute("aria-sort");
+
+            // Remettre le texte brut
+            th.textContent = original;
+            // Garder data-original-label pour le prochain cycle
+        });
+
         if (this._wrapper) {
+            // Remet la <table> à sa place d'origine, avant le wrapper
             this._wrapper.parentNode.insertBefore(this.table, this._wrapper);
             this._wrapper.remove();
+            this._wrapper = null;
         }
+        this.table.removeAttribute("data-ui-init"); // ← indispensable pour Turbo
         localStorage.removeItem(this._storageKey);
         UIDataTable.#instances.delete(this.id);
         dispatch("datatable:destroy", { id: this.id });

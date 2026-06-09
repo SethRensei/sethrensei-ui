@@ -1,13 +1,15 @@
 import Alpine from "alpinejs";
 import { UISelect } from "./UI/select-search.js";
-import { Dropdown } from "./Classic/dropdown.js";
-import { DropdownHover } from "./Classic/dropdown.js";
-import { DropdownMega } from "./Classic/dropdown.js";
-import { DropdownSelect } from "./Classic/dropdown.js";
-import { DropdownMultiSelect } from "./Classic/dropdown.js";
-import { DropdownNested } from "./Classic/dropdown.js";
-import { DropdownCommand } from "./Classic/dropdown.js";
-import { DropdownContext } from "./Classic/dropdown.js";
+import {
+    Dropdown,
+    DropdownHover,
+    DropdownMega,
+    DropdownSelect,
+    DropdownMultiSelect,
+    DropdownNested,
+    DropdownCommand,
+    DropdownContext,
+} from "./Classic/dropdown.js";
 import { Navbar } from "./Layout/navbar.js";
 import { Modal } from "./Classic/modal.js";
 import { UIFileDropzone } from "./UI/file-dropzone.js";
@@ -17,106 +19,144 @@ import { UIDataTable } from "./UI/datatable.js";
 import { AnimationObserver } from "./Classic/animations.js";
 
 /* ── Alpine ─────────────────────────────────────────────────── */
+// Alpine ne doit démarrer QU'UNE seule fois, jamais dans init()
+if (!window.__alpineStarted) {
+    Alpine.start();
+    window.__alpineStarted = true;
+}
 window.uiToast = uiToast;
-Alpine.start();
 
-/* ── Initialisateurs (tous idempotents via guards data-*) ───── */
-function initUISelects(root = document) {
-    root.querySelectorAll(".ui-select:not([data-ui-select-init])").forEach(
-        (el) => {
-            if (!el.querySelector(".ui-select-trigger")) return;
-            el.dataset.uiSelectInit = "1";
-            const ph = el.querySelector(".ui-select-placeholder");
-            if (ph) el.dataset.placeholder = ph.textContent.trim();
-            new UISelect(el);
-        },
-    );
+/* ── Registry des instances (pour destroy propre) ───────────── */
+const registry = new Map(); // el → instance
+
+function register(el, instance) {
+    registry.set(el, instance);
+    return instance;
 }
 
-function initUIFileDropzones(root = document) {
-    root.querySelectorAll(".form-file-group:not([data-file-init])").forEach(
+/* ── Initialisateurs ─────────────────────────────────────────── */
+const INIT_ATTR = "data-ui-init"; // attribut unique pour tous les composants
+
+function initUISelects(root) {
+    root.querySelectorAll(`.ui-select:not([${INIT_ATTR}])`).forEach((el) => {
+        if (!el.querySelector(".ui-select-trigger")) return;
+        const ph = el.querySelector(".ui-select-placeholder");
+        if (ph) el.dataset.placeholder = ph.textContent.trim();
+        el.setAttribute(INIT_ATTR, "1");
+        register(el, new UISelect(el));
+    });
+}
+
+function initUIFileDropzones(root) {
+    root.querySelectorAll(`.form-file-group:not([${INIT_ATTR}])`).forEach(
         (el) => {
             if (
                 !el.querySelector(".dropzone-input") ||
                 !el.querySelector(".dropzone-trigger")
             )
                 return;
-            el.dataset.fileInit = "1";
-            new UIFileDropzone(el, {
-                maxSizeKb: el.dataset.maxSize
-                    ? parseInt(el.dataset.maxSize, 10)
-                    : 10240,
-                allowedTypes: el.dataset.allowedTypes
-                    ? el.dataset.allowedTypes.split(",")
-                    : ["image/png", "image/jpeg", "image/jpg"],
-            });
+            el.setAttribute(INIT_ATTR, "1");
+            register(
+                el,
+                new UIFileDropzone(el, {
+                    maxSizeKb: el.dataset.maxSize
+                        ? parseInt(el.dataset.maxSize, 10)
+                        : 10240,
+                    allowedTypes: el.dataset.allowedTypes
+                        ? el.dataset.allowedTypes.split(",")
+                        : ["image/png", "image/jpeg", "image/jpg"],
+                }),
+            );
         },
     );
 }
 
-function initUIAlerts(root = document) {
+function initUIAlerts(root) {
     root.querySelectorAll(
-        ".ui-alert[data-dismissible]:not([data-alert-init])",
+        `.ui-alert[data-dismissible]:not([${INIT_ATTR}])`,
     ).forEach((el) => {
-        el.dataset.alertInit = "1";
-        new UIAlert(el);
+        el.setAttribute(INIT_ATTR, "1");
+        register(el, new UIAlert(el));
     });
 }
 
-function initDropdowns(root = document) {
-    const TYPE_MAP = {
-        default: Dropdown,
-        hover: DropdownHover,
-        mega: DropdownMega,
-        select: DropdownSelect,
-        "multi-select": DropdownMultiSelect,
-        nested: DropdownNested,
-        command: DropdownCommand,
-        context: DropdownContext,
-    };
-    const instances = {};
-    root.querySelectorAll(".dropdown:not([data-dropdown-init])").forEach(
-        (el) => {
-            el.dataset.dropdownInit = "1";
-            const T = TYPE_MAP[el.dataset.ddType ?? "default"] ?? Dropdown;
-            instances[el.id] = new T(el);
-        },
-    );
-}
+const TYPE_MAP = {
+    default: Dropdown,
+    hover: DropdownHover,
+    mega: DropdownMega,
+    select: DropdownSelect,
+    "multi-select": DropdownMultiSelect,
+    nested: DropdownNested,
+    command: DropdownCommand,
+    context: DropdownContext,
+};
 
-function initNavbars(root = document) {
-    root.querySelectorAll(".navbar:not([data-navbar-init])").forEach((el) => {
-        el.dataset.navbarInit = "1";
-        new Navbar(el);
+function initDropdowns(root) {
+    root.querySelectorAll(`.dropdown:not([${INIT_ATTR}])`).forEach((el) => {
+        el.setAttribute(INIT_ATTR, "1");
+        const T = TYPE_MAP[el.dataset.ddType ?? "default"] ?? Dropdown;
+        register(el, new T(el));
     });
 }
 
-function initModals(root = document) {
-    root.querySelectorAll("[data-modal-target]:not([data-modal-init])").forEach(
+function initNavbars(root) {
+    root.querySelectorAll(`.navbar:not([${INIT_ATTR}])`).forEach((el) => {
+        el.setAttribute(INIT_ATTR, "1");
+        register(el, new Navbar(el));
+    });
+}
+
+function initModals(root) {
+    root.querySelectorAll(`[data-modal-target]:not([${INIT_ATTR}])`).forEach(
         (trigger) => {
             const target = document.querySelector(trigger.dataset.modalTarget);
             if (!target) return;
-            trigger.dataset.modalInit = "1";
-            const modal = new Modal(target);
+            trigger.setAttribute(INIT_ATTR, "1");
+            const modal = register(target, new Modal(target));
             trigger.addEventListener("click", () => modal.open());
         },
     );
 }
 
-/* ── Point d'entrée unique ──────────────────────────────────── */
-function init() {
-    initUISelects();
-    initUIFileDropzones();
-    initUIAlerts();
-    initDropdowns();
-    initNavbars();
-    initModals();
-    UIDataTable.init();
-    AnimationObserver.init();
-    
+/* ── Init & Destroy ──────────────────────────────────────────── */
+function init(root = document) {
+    initUISelects(root);
+    initUIFileDropzones(root);
+    initUIAlerts(root);
+    initDropdowns(root);
+    initNavbars(root);
+    initModals(root);
+    AnimationObserver.init(root);
+
+    root.querySelectorAll(
+        `table.datatable:not([data-ui-init]),
+             table[data-datatable="true"]:not([data-ui-init])`,
+    ).forEach((tableEl) => {
+        register(tableEl, new UIDataTable(tableEl));
+        // data-ui-init est posé dans _init(), pas besoin de le répéter
+    });
 }
 
-/* ── Cycle de vie : fonctionne avec ou sans Turbo ───────────── */
-document.addEventListener("DOMContentLoaded", init);
-document.addEventListener("turbo:load", init);
-document.addEventListener("turbolinks:load", init);
+function destroy(root = document) {
+    root.querySelectorAll(`[${INIT_ATTR}]`).forEach((el) => {
+        const instance = registry.get(el);
+        if (instance?.destroy) instance.destroy(); // nettoyage propre si dispo
+        registry.delete(el);
+        el.removeAttribute(INIT_ATTR); // ← retire le guard !
+    });
+}
+
+/* ── Cycle de vie Turbo ──────────────────────────────────────── */
+// turbo:load couvre : premier chargement + navigation Turbo
+document.addEventListener("turbo:load", () => init(document));
+
+// Avant mise en cache : détruire pour que la restauration soit propre
+document.addEventListener("turbo:before-cache", () => destroy(document));
+
+// Frames Turbo (chargement partiel)
+document.addEventListener("turbo:frame-load", (e) => init(e.target));
+
+// Fallback sans Turbo
+document.addEventListener("DOMContentLoaded", () => {
+    if (!document.documentElement.hasAttribute("data-turbo")) init(document);
+});
