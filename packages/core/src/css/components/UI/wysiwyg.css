@@ -1,0 +1,136 @@
+@layer components {
+    .ui-editor {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background-color: var(--ui-white);
+        font-family: var(--font-sans);
+        font-size: var(--text-base);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .ui-editor.is-focused {
+        border-color: var(--ui-focus-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-focus-color) 25%, transparent);
+    }
+
+    /* Champ source (input/textarea d'origine) — masqué mais soumis au formulaire */
+    .ui-editor-source {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+
+    .ui-editor-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.125rem;
+        padding: 0.375rem;
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--color-primary-50);
+    }
+
+    .ui-editor-separator {
+        width: 1px;
+        height: 1.25rem;
+        margin: 0 0.25rem;
+        background-color: var(--color-primary-200);
+    }
+
+    .ui-editor-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.75rem;
+        height: 1.75rem;
+        padding: 0 0.375rem;
+        border: none;
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--color-primary-800);
+        font-size: var(--text-xs);
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.12s ease, color 0.12s ease;
+    }
+
+    .ui-editor-btn-icon {
+        pointer-events: none;
+    }
+
+    .ui-editor-btn:hover {
+        background-color: var(--color-primary-100);
+    }
+
+    .ui-editor-btn:focus-visible {
+        outline: 2px solid var(--ui-focus-color);
+        outline-offset: 1px;
+    }
+
+    .ui-editor-btn.is-active {
+        background-color: var(--color-primary-500);
+        color: var(--ui-white);
+    }
+
+    .ui-editor-content {
+        flex: 1;
+        padding: 0.75rem;
+        font-size: var(--text-base);
+        line-height: 1.6;
+        color: var(--color-primary-900);
+        outline: none;
+        overflow-y: auto;
+    }
+
+    .ui-editor-content:empty::before {
+        content: attr(data-placeholder);
+        color: var(--color-primary-700);
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    /* Mise en forme du contenu généré (cohérente avec une typographie "prose") */
+    .ui-editor-content h2 {
+        font-size: var(--text-xl);
+        font-weight: 700;
+        margin: 0.75rem 0 0.375rem;
+        color: var(--color-primary-900);
+    }
+
+    .ui-editor-content h3 {
+        font-size: var(--text-lg);
+        font-weight: 700;
+        margin: 0.625rem 0 0.3rem;
+        color: var(--color-primary-900);
+    }
+
+    .ui-editor-content p {
+        margin: 0 0 0.5rem;
+    }
+
+    .ui-editor-content ul,
+    .ui-editor-content ol {
+        margin: 0 0 0.5rem 1.25rem;
+    }
+
+    .ui-editor-content blockquote {
+        margin: 0.5rem 0;
+        padding-left: 0.75rem;
+        border-left: 3px solid var(--color-primary-400);
+        color: var(--color-primary-700);
+        font-style: italic;
+    }
+
+    .ui-editor-content a {
+        color: var(--color-primary-600);
+        text-decoration: underline;
+    }
+}

@@ -1,0 +1,228 @@
+@layer components {
+    .ui-datepicker {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        max-width: 16rem;
+    }
+
+    /* Input natif type="date" — conservé dans le DOM pour le formulaire,
+       masqué visuellement mais toujours accessible au focus clavier. */
+    .ui-datepicker-native {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        pointer-events: none;
+        margin: 0;
+    }
+
+    .ui-datepicker-input {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background-color: var(--ui-white);
+        font-family: var(--font-sans);
+        font-size: var(--text-base);
+        color: inherit;
+        cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .ui-datepicker-input:hover {
+        border-color: var(--color-primary-400);
+    }
+
+    .ui-datepicker-input:focus-visible,
+    .ui-datepicker-input[aria-expanded="true"] {
+        outline: none;
+        border-color: var(--ui-focus-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-focus-color) 25%, transparent);
+    }
+
+    .ui-datepicker-value {
+        flex: 1;
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ui-datepicker-placeholder {
+        color: var(--color-primary-700);
+        opacity: 0.55;
+    }
+
+    .ui-datepicker-icon {
+        width: 1.1rem;
+        height: 1.1rem;
+        flex-shrink: 0;
+        color: var(--color-primary-600);
+    }
+
+    /* ── Panneau calendrier ─────────────────────────────────────────────────── */
+    .ui-datepicker-panel {
+        position: absolute;
+        z-index: 50;
+        top: calc(100% + 0.375rem);
+        left: 0;
+        width: 17rem;
+        padding: 0.75rem;
+        background-color: var(--ui-white);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--ui-shadow-lg);
+
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    .ui-datepicker-panel.show {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    .ui-datepicker-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .ui-datepicker-title {
+        font-weight: 600;
+        font-size: var(--text-sm);
+        text-transform: capitalize;
+        color: var(--color-primary-900);
+    }
+
+    .ui-datepicker-nav-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: var(--radius-sm);
+        border: none;
+        background: transparent;
+        font-size: var(--text-lg);
+        line-height: 1;
+        color: var(--color-primary-700);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+
+    .ui-datepicker-nav-btn:hover {
+        background-color: var(--color-primary-50);
+    }
+
+    .ui-datepicker-nav-btn:focus-visible {
+        outline: 2px solid var(--ui-focus-color);
+        outline-offset: 1px;
+    }
+
+    .ui-datepicker-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+    }
+
+    .ui-datepicker-weekday {
+        text-align: center;
+        font-size: var(--text-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--color-primary-600);
+        padding-bottom: 0.25rem;
+    }
+
+    .ui-datepicker-day {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1 / 1;
+        border: none;
+        background: transparent;
+        border-radius: var(--radius-sm);
+        font-size: var(--text-sm);
+        color: var(--color-primary-900);
+        cursor: pointer;
+        transition: background-color 0.12s ease, color 0.12s ease;
+    }
+
+    .ui-datepicker-day:hover:not(.is-disabled) {
+        background-color: var(--color-primary-100);
+    }
+
+    .ui-datepicker-day:focus-visible {
+        outline: 2px solid var(--ui-focus-color);
+        outline-offset: 1px;
+    }
+
+    .ui-datepicker-day.is-outside {
+        color: var(--color-primary-300);
+    }
+
+    .ui-datepicker-day.is-today {
+        font-weight: 700;
+        box-shadow: inset 0 0 0 1px var(--color-primary-400);
+    }
+
+    .ui-datepicker-day.is-selected {
+        background-color: var(--color-primary-500);
+        color: var(--ui-white);
+        font-weight: 600;
+    }
+
+    .ui-datepicker-day.is-selected:hover {
+        background-color: var(--color-primary-600);
+    }
+
+    .ui-datepicker-day.is-disabled {
+        color: var(--color-primary-200);
+        cursor: not-allowed;
+    }
+
+    .ui-datepicker-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: 0.625rem;
+        padding-top: 0.625rem;
+        border-top: 1px solid var(--color-primary-100);
+    }
+
+    .ui-datepicker-footer-btn {
+        flex: 1;
+        padding: 0.375rem 0.5rem;
+        font-size: var(--text-xs);
+        font-weight: 600;
+        border: none;
+        border-radius: var(--radius-sm);
+        background-color: var(--color-primary-500);
+        color: var(--ui-white);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+
+    .ui-datepicker-footer-btn:hover {
+        background-color: var(--color-primary-600);
+    }
+
+    .ui-datepicker-footer-btn--ghost {
+        background-color: transparent;
+        color: var(--color-destructive-600);
+        box-shadow: inset 0 0 0 1px var(--color-destructive-200);
+    }
+
+    .ui-datepicker-footer-btn--ghost:hover {
+        background-color: var(--color-destructive-50);
+    }
+}
