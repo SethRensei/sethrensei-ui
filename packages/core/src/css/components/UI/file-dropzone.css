@@ -50,7 +50,7 @@
     border: 2px dashed var(--border-color);
     border-radius: 0.5rem;
     cursor: pointer;
-    background-color: var(--color-gray-300);
+    background-color: transparent;
     transition: all 0.2s ease-in-out;
 }
 

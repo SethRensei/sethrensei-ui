@@ -1,6 +1,5 @@
 @layer components {
     .ui-select {
-        --select-bg: var(--color-gray-300);
         --select-border: var(--color-primary-300);
         --select-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 4px 16px rgba(0, 0, 0, .08);
         --select-shadow-focus: 0 0 0 3px rgba(99, 102, 241, .15);
@@ -47,6 +46,10 @@
         display: inline-flex;
         flex-direction: column;
         width: 100%;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: transparent;
+        transition: border-color var(--t-base);
     }
 
     /* ── Trigger ───────────────────────────────────────────── */
@@ -57,15 +60,12 @@
         width: 100%;
         min-height: var(--select-trigger-h);
         padding: 6px var(--select-trigger-px);
-        background: var(--select-bg);
-        border: 2px solid var(--border-color);
-        border-radius: var(--radius-md);
+        background: transparent;
         color: var(--select-trigger-color);
         font-family: inherit;
         font-size: inherit;
         cursor: pointer;
         text-align: left;
-        transition: border-color var(--t-base), box-shadow var(--t-base);
         outline: none;
         user-select: none;
     }
@@ -74,9 +74,14 @@
     .ui-select-trigger:focus-visible {
         border-color: var(--ui-focus-color);
         box-shadow:
-                0 0 0 3px color-mix(in srgb,
-                    var(--ui-focus-color) 25%,
-                    transparent);
+            0 0 0 3px color-mix(in srgb,
+                var(--ui-focus-color) 25%,
+                transparent);
+    }
+
+    .ui-select[data-open="true"] .ui-select-trigger,
+    .ui-select:focus-visible {
+        border-color: var(--ui-focus-color);
     }
 
     .ui-select-trigger-content {
@@ -196,9 +201,9 @@
             border-color: var(--ui-focus-color);
             background: var(--search-bg);
             box-shadow:
-                    0 0 0 3px color-mix(in srgb,
-                        var(--ui-focus-color) 25%,
-                        transparent);
+                0 0 0 3px color-mix(in srgb,
+                    var(--ui-focus-color) 25%,
+                    transparent);
         }
     }
 
@@ -233,7 +238,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-top:2px;
+        margin-top: 2px;
         padding: var(--option-py) var(--option-px);
         border-radius: var(--option-radius);
         cursor: pointer;

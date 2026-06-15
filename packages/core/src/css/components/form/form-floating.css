@@ -20,7 +20,7 @@
             font-size .2s;
 
         pointer-events: none;
-        background: var(--color-gray-300);
+        background: transparent;
         padding-inline: .25rem;
     }
 

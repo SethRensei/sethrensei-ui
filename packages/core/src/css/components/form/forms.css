@@ -48,7 +48,7 @@
         padding: .625rem .875rem;
         border: 2px solid var(--border-color);
         border-radius: var(--radius-md);
-        background: var(--color-gray-300);
+        background: transparent;
         color: inherit;
         font-size: .875rem;
         transition:
