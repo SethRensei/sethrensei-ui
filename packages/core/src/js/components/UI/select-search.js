@@ -72,6 +72,15 @@ export class UISelect {
                 `<div class="ui-select-empty">No results</div>`,
             );
         }
+
+        dropdown.querySelectorAll(".ui-option").forEach((opt) => {
+            if (!opt.querySelector(".ui-option-checkbox")) {
+                opt.insertAdjacentHTML(
+                    "afterbegin",
+                    `<span class="ui-option-checkbox"></span>`,
+                );
+            }
+        });
     }
 
     /* ── DOM binding ─────────────────────────────────────────── */
@@ -163,11 +172,15 @@ export class UISelect {
                 const label =
                     opt.querySelector(".ui-option-label")?.textContent.trim() ||
                     value;
+
                 this.selected.set(value, label);
+                opt.dataset.selected = "true";
                 opt.setAttribute("aria-selected", "true");
             }
         });
-        if (this.selected.size) this._renderTrigger();
+
+        this._renderTrigger();
+        this._syncHidden();
     }
 
     /* ── Open ────────────────────────────────────────────────── */
@@ -320,30 +333,34 @@ export class UISelect {
         );
         if (!baseInput) return;
 
+        // Toujours réactiver en début de cycle
+        baseInput.disabled = false;
+        baseInput.value = "";
+
         const name = baseInput.name;
 
         if (this.multiple) {
-            baseInput.value = "";
             const arrayFormat = this.el.dataset.arrayFormat || "standard";
-            this.selected.forEach((_, value) => {
-                const inp = document.createElement("input");
-                inp.type = "hidden";
-                inp.value = value;
-                switch (arrayFormat) {
-                    // category=A&category=B
-                    case "standard":
-                        inp.name = name.replace(/\[\]$/, "");
-                        break;
-                    // category[]=A&category[]=B
-                    case "php":
-                        inp.name = name.endsWith("[]") ? name : `${name}[]`;
-                        break;
-                    default:
-                        inp.name = name.replace(/\[\]$/, "");
-                }
-                inp.dataset.uiSelect = "1";
-                this.el.appendChild(inp);
-            });
+            const resolvedName =
+                arrayFormat === "php"
+                    ? name.endsWith("[]")
+                        ? name
+                        : `${name}[]`
+                    : name.replace(/\[\]$/, "");
+
+            if (this.selected.size > 0) {
+                baseInput.disabled = true; // exclut le sentinel du POST
+
+                this.selected.forEach((_, value) => {
+                    const inp = document.createElement("input");
+                    inp.type = "hidden";
+                    inp.name = resolvedName;
+                    inp.value = value;
+                    inp.dataset.uiSelect = "1";
+                    this.el.appendChild(inp);
+                });
+            }
+            // si selected.size === 0 → baseInput reste actif avec value=""
         } else {
             const [[value] = []] = this.selected;
             baseInput.value = value ?? "";

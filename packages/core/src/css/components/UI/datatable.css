@@ -598,10 +598,6 @@
     }
 
     /* Actions column */
-    .dt-cell-actions {
-        text-align: center;
-    }
-
     .dt-actions {
         display: inline-flex;
         align-items: center;
