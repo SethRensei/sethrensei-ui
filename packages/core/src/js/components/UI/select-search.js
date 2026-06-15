@@ -3,7 +3,6 @@ export class UISelect {
         if (!(element instanceof HTMLElement))
             throw new Error("UISelect: element must be an HTMLElement");
         if (element._uiSelect) return element._uiSelect; // singleton guard
-
         this.el = element;
         this.opts = Object.assign(
             { closeOnSelect: true, searchDelay: 0 },
@@ -12,43 +11,102 @@ export class UISelect {
         this.multiple = element.dataset.multiple === "true";
         this.selected = new Map(); // value → label
         this._focusIdx = -1;
-
+        this._injectStructure();
         this._bindDOM();
         this._bindEvents();
         this._syncInitial();
-
         element._uiSelect = this;
     }
 
-    /* ── DOM binding ─────────────────────────────────────── */
+    /* ── Auto-inject missing structure ───────────────────────── */
+    _injectStructure() {
+        const placeholder = this.el.dataset.placeholder || "Choose an option";
+        const withSearch = this.el.dataset.search === "true";
+
+        // 1. Inject trigger if absent
+        if (!this.el.querySelector(".ui-select-trigger")) {
+            this.el.insertAdjacentHTML(
+                "afterbegin",
+                `<button type="button" class="ui-select-trigger">
+                    <span class="ui-select-trigger-content">
+                        <span class="ui-select-placeholder">${this._escHtml(placeholder)}</span>
+                    </span>
+                </button>`,
+            );
+        }
+
+        // 2. Ensure dropdown wrapper exists
+        let dropdown = this.el.querySelector(".ui-select-dropdown");
+        if (!dropdown) {
+            dropdown = document.createElement("div");
+            dropdown.className = "ui-select-dropdown";
+            this.el.appendChild(dropdown);
+        }
+
+        // 3. Inject search bar inside dropdown if data-search="true" and not already present
+        if (
+            withSearch &&
+            !dropdown.querySelector(".ui-select-search-wrapper")
+        ) {
+            dropdown.insertAdjacentHTML(
+                "afterbegin",
+                `<div class="ui-select-search-wrapper">
+                    <input type="search" class="ui-select-search" placeholder="Search..." autocomplete="off">
+                </div>`,
+            );
+        }
+
+        // 4. Ensure options list exists
+        if (!dropdown.querySelector(".ui-select-options")) {
+            dropdown.insertAdjacentHTML(
+                "beforeend",
+                `<div class="ui-select-options"></div>`,
+            );
+        }
+
+        // 5. Ensure empty-state message exists inside options list
+        const optsList = dropdown.querySelector(".ui-select-options");
+        if (!optsList.querySelector(".ui-select-empty")) {
+            optsList.insertAdjacentHTML(
+                "beforeend",
+                `<div class="ui-select-empty">No results</div>`,
+            );
+        }
+    }
+
+    /* ── DOM binding ─────────────────────────────────────────── */
     _bindDOM() {
-        this.trigger = this.el.querySelector(".ui-select-trigger");
-
-        // 1. Injection automatique du chevron dans le trigger s'il n'existe pas
+        // Inject chevron into trigger if absent
         if (!this.el.querySelector(".ui-select-chevron")) {
-            const chevronHTML = `<svg class="ui-select-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7.5l5 5 5-5"/></svg>`;
-            this.trigger.insertAdjacentHTML("beforeend", chevronHTML);
+            this.el
+                .querySelector(".ui-select-trigger")
+                .insertAdjacentHTML(
+                    "beforeend",
+                    `<svg class="ui-select-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7.5l5 5 5-5"/></svg>`,
+                );
         }
 
-        // 2. Injection automatique du bouton "Clear" dans le wrapper principal s'il n'existe pas
+        // Inject clear button into root if absent
         if (!this.el.querySelector(".ui-select-clear")) {
-            const clearHTML = `
-                <button type="button" class="ui-select-clear" aria-label="Clear" hidden>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                </button>`;
-            // On l'insère au tout début du conteneur principal .ui-select
-            this.el.insertAdjacentHTML("afterbegin", clearHTML);
+            this.el.insertAdjacentHTML(
+                "afterbegin",
+                `<button type="button" class="ui-select-clear" aria-label="Clear" hidden>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </button>`,
+            );
         }
 
-        // 3. Liaison classique des éléments maintenant qu'ils sont dans le DOM
+        // Bind element references
         this.trigger = this.el.querySelector(".ui-select-trigger");
         this.dropdown = this.el.querySelector(".ui-select-dropdown");
         this.searchEl = this.el.querySelector(".ui-select-search");
         this.optsList = this.el.querySelector(".ui-select-options");
         this.clearBtn = this.el.querySelector(".ui-select-clear");
         this.content = this.trigger.querySelector(".ui-select-trigger-content");
-        this.placeholder = this.trigger.querySelector(".ui-select-placeholder");
         this.emptyMsg = this.el.querySelector(".ui-select-empty");
+
         this.allOptions = () => [
             ...this.optsList.querySelectorAll(".ui-option"),
         ];
@@ -56,7 +114,7 @@ export class UISelect {
             this.allOptions().filter((o) => o.dataset.hidden !== "true");
     }
 
-    /* ── Event listeners ─────────────────────────────────── */
+    /* ── Event listeners ─────────────────────────────────────── */
     _bindEvents() {
         // Toggle on trigger click
         this.trigger.addEventListener("click", (e) => {
@@ -97,7 +155,7 @@ export class UISelect {
         document.addEventListener("mousedown", this._outsideHandler);
     }
 
-    /* ── Sync pre-selected values (SSR support) ──────────── */
+    /* ── Sync pre-selected values (SSR support) ──────────────── */
     _syncInitial() {
         this.allOptions().forEach((opt) => {
             if (opt.dataset.selected === "true") {
@@ -112,7 +170,7 @@ export class UISelect {
         if (this.selected.size) this._renderTrigger();
     }
 
-    /* ── Open ────────────────────────────────────────────── */
+    /* ── Open ────────────────────────────────────────────────── */
     open() {
         if (this.el.dataset.disabled === "true") return;
         this.el.dataset.open = "true";
@@ -122,7 +180,7 @@ export class UISelect {
         this._emit("select:open");
     }
 
-    /* ── Close ───────────────────────────────────────────── */
+    /* ── Close ───────────────────────────────────────────────── */
     close() {
         this.el.dataset.open = "false";
         this.trigger.setAttribute("aria-expanded", "false");
@@ -135,16 +193,15 @@ export class UISelect {
         this._emit("select:close");
     }
 
-    /* ── Toggle ──────────────────────────────────────────── */
+    /* ── Toggle ──────────────────────────────────────────────── */
     toggle() {
         this.el.dataset.open === "true" ? this.close() : this.open();
     }
 
-    /* ── Search ──────────────────────────────────────────── */
+    /* ── Search ──────────────────────────────────────────────── */
     search(query) {
         const q = query.toLowerCase().trim();
         let visibleCount = 0;
-
         this.allOptions().forEach((opt) => {
             const label =
                 opt
@@ -154,17 +211,15 @@ export class UISelect {
             opt.dataset.hidden = matches ? "false" : "true";
             if (matches) visibleCount++;
         });
-
         if (this.emptyMsg) {
             this.emptyMsg.classList.toggle("visible", visibleCount === 0);
         }
-
         this._focusIdx = -1;
         this._clearFocusedOption();
         this._emit("select:search", { query });
     }
 
-    /* ── Select / deselect an option ─────────────────────── */
+    /* ── Select / deselect an option ─────────────────────────── */
     _selectOption(optEl) {
         const value = optEl.dataset.value;
         const label =
@@ -180,7 +235,6 @@ export class UISelect {
                 optEl.setAttribute("aria-selected", "true");
             }
         } else {
-            // Deselect previous
             this.allOptions().forEach((o) => {
                 o.dataset.selected = "false";
                 o.setAttribute("aria-selected", "false");
@@ -198,7 +252,7 @@ export class UISelect {
         if (!this.multiple && this.opts.closeOnSelect) this.close();
     }
 
-    /* ── Deselect by value ───────────────────────────────── */
+    /* ── Deselect by value ───────────────────────────────────── */
     _deselect(value) {
         this.selected.delete(value);
         const opt = this.optsList.querySelector(
@@ -213,38 +267,30 @@ export class UISelect {
         this._emit("select:change", { value: this.getValue() });
     }
 
-    /* ── Render trigger content ──────────────────────────── */
+    /* ── Render trigger content ──────────────────────────────── */
     _renderTrigger() {
         this.content.innerHTML = "";
 
         if (this.selected.size === 0) {
             const ph = document.createElement("span");
             ph.className = "ui-select-placeholder";
-            ph.textContent =
-                this.trigger.querySelector(".ui-select-placeholder")
-                    ?.textContent ||
-                this.el.dataset.placeholder ||
-                "Select…";
-            // Re-grab placeholder from a data attr if original was replaced
-            const ph0 = this.el.dataset.placeholder;
-            if (ph0) ph.textContent = ph0;
+            ph.textContent = this.el.dataset.placeholder || "Choose an option";
             this.content.appendChild(ph);
-            this.clearBtn && (this.clearBtn.hidden = true);
+            if (this.clearBtn) this.clearBtn.hidden = true;
             return;
         }
 
-        this.clearBtn && (this.clearBtn.hidden = false);
+        if (this.clearBtn) this.clearBtn.hidden = false;
 
         if (this.multiple) {
             const tagsWrapper = document.createElement("div");
             tagsWrapper.className = "ui-select-tags";
-
             this.selected.forEach((label, value) => {
                 const badge = document.createElement("span");
                 badge.className = "ui-badge";
                 badge.dataset.badgeValue = value;
                 badge.innerHTML = `<span class="ui-badge-label">${this._escHtml(label)}</span>
-          <button type="button" class="ui-badge-remove" aria-label="Remove ${this._escHtml(label)}" data-remove="${value}">×</button>`;
+                    <button type="button" class="ui-badge-remove" aria-label="Remove ${this._escHtml(label)}" data-remove="${value}">×</button>`;
                 badge
                     .querySelector(".ui-badge-remove")
                     .addEventListener("click", (e) => {
@@ -253,7 +299,6 @@ export class UISelect {
                     });
                 tagsWrapper.appendChild(badge);
             });
-
             this.content.appendChild(tagsWrapper);
         } else {
             const [[, label]] = this.selected;
@@ -264,9 +309,8 @@ export class UISelect {
         }
     }
 
-    /* ── Sync hidden inputs ──────────────────────────────── */
+    /* ── Sync hidden inputs ──────────────────────────────────── */
     _syncHidden() {
-        // Remove old hidden inputs added by UISelect
         this.el
             .querySelectorAll('input[type="hidden"][data-ui-select]')
             .forEach((i) => i.remove());
@@ -274,8 +318,8 @@ export class UISelect {
         const baseInput = this.el.querySelector(
             'input[type="hidden"]:not([data-ui-select])',
         );
-
         if (!baseInput) return;
+
         const name = baseInput.name;
 
         if (this.multiple) {
@@ -290,12 +334,10 @@ export class UISelect {
                     case "standard":
                         inp.name = name.replace(/\[\]$/, "");
                         break;
-                    
                     // category[]=A&category[]=B
                     case "php":
                         inp.name = name.endsWith("[]") ? name : `${name}[]`;
                         break;
-
                     default:
                         inp.name = name.replace(/\[\]$/, "");
                 }
@@ -308,7 +350,7 @@ export class UISelect {
         }
     }
 
-    /* ── Keyboard: trigger ───────────────────────────────── */
+    /* ── Keyboard: trigger ───────────────────────────────────── */
     _handleTriggerKey(e) {
         const open = this.el.dataset.open === "true";
         switch (e.key) {
@@ -334,7 +376,7 @@ export class UISelect {
         }
     }
 
-    /* ── Keyboard: dropdown ──────────────────────────────── */
+    /* ── Keyboard: dropdown ──────────────────────────────────── */
     _handleDropdownKey(e) {
         if (this.el.dataset.open !== "true") return;
         switch (e.key) {
@@ -361,7 +403,7 @@ export class UISelect {
         }
     }
 
-    /* ── Move keyboard focus ─────────────────────────────── */
+    /* ── Move keyboard focus ─────────────────────────────────── */
     _moveFocus(dir) {
         const vis = this.visibleOptions();
         if (!vis.length) return;
@@ -384,7 +426,7 @@ export class UISelect {
             .forEach((o) => o.classList.remove("ui-focused"));
     }
 
-    /* ── Public API ──────────────────────────────────────── */
+    /* ── Public API ──────────────────────────────────────────── */
     getValue() {
         if (this.multiple) return [...this.selected.keys()];
         const [[v] = []] = this.selected;
@@ -435,7 +477,7 @@ export class UISelect {
         delete this.el._uiSelect;
     }
 
-    /* ── Helpers ─────────────────────────────────────────── */
+    /* ── Helpers ─────────────────────────────────────────────── */
     _emit(name, detail = {}) {
         this.el.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
     }

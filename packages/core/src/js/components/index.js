@@ -39,9 +39,10 @@ const INIT_ATTR = "data-ui-init"; // attribut unique pour tous les composants
 
 function initUISelects(root) {
     root.querySelectorAll(`.ui-select:not([${INIT_ATTR}])`).forEach((el) => {
-        if (!el.querySelector(".ui-select-trigger")) return;
-        const ph = el.querySelector(".ui-select-placeholder");
-        if (ph) el.dataset.placeholder = ph.textContent.trim();
+        if (!el.dataset.placeholder) {
+            const ph = el.querySelector(".ui-select-placeholder");
+            if (ph) el.dataset.placeholder = ph.textContent.trim();
+        }
         el.setAttribute(INIT_ATTR, "1");
         register(el, new UISelect(el));
     });
