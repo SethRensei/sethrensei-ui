@@ -17,6 +17,7 @@ import { UIAlert } from "./UI/alert.js";
 import { uiToast } from "./UI/toast.js";
 import { UIDataTable } from "./UI/datatable.js";
 import { AnimationObserver } from "./Classic/animations.js";
+import { RenAlert } from "./UI/alert-fn.js";
 
 /* ── Alpine ─────────────────────────────────────────────────── */
 // Alpine ne doit démarrer QU'UNE seule fois, jamais dans init()
@@ -25,6 +26,7 @@ if (!window.__alpineStarted) {
     window.__alpineStarted = true;
 }
 window.uiToast = uiToast;
+window.RenAlert = RenAlert;
 
 /* ── Registry des instances (pour destroy propre) ───────────── */
 const registry = new Map(); // el → instance
