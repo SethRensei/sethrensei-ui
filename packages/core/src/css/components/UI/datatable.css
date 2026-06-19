@@ -4,6 +4,7 @@
        2. WRAPPER
        ============================================================ */
     .dt-wrapper {
+        --dt-max-height: 640px;
         /* Typography */
         --dt-font-family: 'Segoe UI', system-ui, sans-serif;
         --dt-font-size-base: 13px;
@@ -19,10 +20,10 @@
         --dt-bg-neutral: #f1efe8;
         /* Colors — striped rows */
         --dt-stripe-odd: var(--color-white);
-        --dt-stripe-even: var(--color-gray-300);
+        --dt-stripe-even: var(--color-primary-200);
         /* Colors — striped columns */
         --dt-stripe-col-odd: var(--color-white);
-        --dt-stripe-col-even: var(--color-gray-300);
+        --dt-stripe-col-even: var(--color-primary-200);
         /* Colors — text */
         --dt-text-primary: #1c1c1b;
         --dt-text-secondary: #6b6b68;
@@ -44,6 +45,7 @@
         overflow: hidden;
         box-shadow: var(--ui-shadow-sm);
         max-height: var(--dt-max-height, 600px);
+        min-height: 350px;
     }
 
     /* ============================================================
@@ -101,7 +103,7 @@
         padding: 6px 10px 6px 30px;
         border: 0.5px solid var(--border-color);
         border-radius: var(--radius-md);
-        background: var(--color-gray-100);
+        background: transparent;
         font-size: var(--dt-font-size-base);
         color: inherit;
         outline: none;
@@ -119,15 +121,20 @@
 
     /* Page-size select */
     .dt-page-size {
+        min-width: 40px;
         padding: 6px 8px;
         border: 0.5px solid var(--border-color);
         border-radius: var(--radius-md);
-        background: var(--color-gray-100);
+        background: transparent;
         font-size: var(--dt-font-size-sm);
         font-family: var(--dt-font-family);
         color: var(--dt-text-secondary);
         outline: none;
         cursor: pointer;
+
+        &:hover {
+            background-color: var(--color-gray-100);
+        }
     }
 
     /* Toolbar buttons */
@@ -498,10 +505,11 @@
     .dt-th-filter input,
     .dt-th-filter select {
         width: 100%;
+        min-width: 100px;
         padding: 3px 6px;
         border: 0.5px solid var(--border-color);
         border-radius: var(--radius-sm);
-        background: var(--color-white);
+        background: transparent;
         font-size: var(--dt-font-size-xs);
         font-family: var(--dt-font-family);
         color: var(--dt-text-primary);
@@ -540,24 +548,24 @@
     }
 
     /* ── Striped rows (comme Bootstrap .table-striped) ── */
-    table.dt-table.dt-table-striped tbody tr:nth-child(odd) td {
+    table.dt-table tbody.dt-table-striped tr:nth-child(odd) td {
         background-color: var(--dt-stripe-odd);
     }
 
-    table.dt-table.dt-table-striped tbody tr:nth-child(even) td {
+    table.dt-table tbody.dt-table-striped tr:nth-child(even) td {
         background-color: var(--dt-stripe-even);
     }
 
-    table.dt-table.dt-table-striped tbody tr:hover td {
-        background: var(--dt-bg-hover);
+    table.dt-table tbody.dt-table-striped tr:hover td {
+        background: var(--color-primary-500);
     }
 
     /* ── Striped columns ── */
-    table.dt-table.dt-table-striped-cols tbody td:nth-child(odd) {
+    table.dt-table tbody.dt-table-striped-cols td:nth-child(odd) {
         background-color: var(--dt-stripe-col-odd);
     }
 
-    table.dt-table.dt-table-striped-cols tbody td:nth-child(even) {
+    table.dt-table tbody.dt-table-striped-cols td:nth-child(even) {
         background-color: var(--dt-stripe-col-even);
     }
 
@@ -565,8 +573,8 @@
         background-color: var(--dt-stripe-col-even);
     }
 
-    table.dt-table.dt-table-striped-cols tbody tr:hover td {
-        background: var(--dt-bg-hover);
+    table.dt-table tbody.dt-table-striped-cols tr:hover td {
+        background: var(--color-primary-500);
     }
 
     /* ── Bordered ── */
@@ -752,172 +760,7 @@
         font-weight: 500;
     }
 
-    /* ============================================================
-       10. PAGINATION
-       ============================================================ */
-    .pagination {
-        display: flex;
-        align-items: center;
-        gap: 3px;
-        list-style: none;
-        flex-wrap: wrap;
-    }
-
-    /* pill */
-    .pagination-pill {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 30px;
-        height: 30px;
-        padding: 0 7px;
-        border: 0.5px solid var(--border-color);
-        border-radius: var(--radius-pill);
-        background: transparent;
-        font-size: var(--dt-font-size-sm);
-        font-family: var(--dt-font-family);
-        color: var(--dt-text-secondary);
-        cursor: pointer;
-        transition: background .1s, color .1s, border-color .1s;
-        line-height: 1;
-    }
-
-    .pagination-pill:hover {
-        background: var(--dt-bg-hover);
-        color: var(--dt-text-primary);
-    }
-
-    .pagination-pill.active,
-    .pagination-pill[aria-current="page"] {
-        background: var(--dt-bg-info);
-        border-color: transparent;
-        color: var(--color-blue-400);
-        font-weight: 500;
-    }
-
-    .pagination-pill:disabled,
-    .pagination-pill[disabled] {
-        opacity: 0.35;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    .pagination-pill svg {
-        width: 13px;
-        height: 13px;
-        stroke: currentColor;
-    }
-
-    .pagination-dots {
-        font-size: var(--dt-font-size-sm);
-        color: var(--dt-text-tertiary);
-        padding: 0 2px;
-        line-height: 30px;
-    }
-
-    /* card */
-    .pagination-card {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 32px;
-        height: 32px;
-        padding: 0 8px;
-        border: 0.5px solid var(--border-color);
-        border-radius: var(--radius-sm);
-        background: var(--color-white);
-        font-size: var(--dt-font-size-sm);
-        font-family: var(--dt-font-family);
-        color: var(--dt-text-secondary);
-        cursor: pointer;
-        transition: background .1s, color .1s;
-    }
-
-    .pagination-card:hover {
-        background: var(--dt-bg-hover);
-    }
-
-    .pagination-card.active {
-        background: var(--dt-text-primary);
-        color: var(--color-white);
-        border-color: var(--dt-text-primary);
-        font-weight: 500;
-    }
-
-    .pagination-card:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    /* circle */
-    .pagination-circle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border: 0.5px solid var(--border-color);
-        border-radius: 50%;
-        background: transparent;
-        font-size: var(--dt-font-size-sm);
-        font-family: var(--dt-font-family);
-        color: var(--dt-text-secondary);
-        cursor: pointer;
-        transition: background .1s, color .1s;
-    }
-
-    .pagination-circle:hover {
-        background: var(--dt-bg-hover);
-    }
-
-    .pagination-circle.active {
-        background: var(--color-blue-400);
-        color: #fff;
-        border-color: transparent;
-        font-weight: 500;
-    }
-
-    .pagination-circle:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    /* bar */
-    .pagination-bar {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 30px;
-        height: 30px;
-        padding: 0 6px;
-        border: none;
-        border-bottom: 2px solid transparent;
-        background: transparent;
-        font-size: var(--dt-font-size-sm);
-        font-family: var(--dt-font-family);
-        color: var(--dt-text-secondary);
-        cursor: pointer;
-        transition: color .1s, border-color .1s;
-        border-radius: 0;
-    }
-
-    .pagination-bar:hover {
-        color: var(--dt-text-primary);
-    }
-
-    .pagination-bar.active {
-        color: var(--color-blue-400);
-        border-bottom-color: var(--color-blue-400);
-        font-weight: 500;
-    }
-
-    .pagination-bar:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
+   
 
     /* ============================================================
        11. RESPONSIVE

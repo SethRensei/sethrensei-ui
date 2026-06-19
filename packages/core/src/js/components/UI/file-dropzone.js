@@ -163,7 +163,6 @@ export class UIFileDropzone {
 
     enable() {
         this.el.dataset.disabled = "false";
-        this.input.disabled = false;
     }
 
     /* ── Event dispatcher ────────────────────────────────── */

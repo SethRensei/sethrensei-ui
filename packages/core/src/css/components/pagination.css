@@ -11,25 +11,6 @@
         font-family: sans-serif;
     }
 
-    /* Base pour un item de pagination */
-    .pagination-item {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.5rem;
-        min-width: 1.25rem;
-        padding-left: 0.625rem;
-        padding-right: 0.625rem;
-        font-size: 1rem;
-        text-decoration: none;
-        background-color: transparent;
-        color: var(--color-gray-400);
-        user-select: none;
-        transition-property: all;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 200ms;
-    }
-
     .pagination-icon {
         height: 20px;
         width: 20px;
@@ -37,15 +18,17 @@
         object-fit: contain;
     }
 
-    /* Gestion des états désactivés */
-    .pagination-item:disabled,
-    .pagination-item.disabled,
-    .pagination-item[disabled] {
-        pointer-events: none;
-        opacity: 0.5;
-        cursor: not-allowed;
+    .pagination-dots {
+        font-size: 11px;
+        color: var(--color-black);
+        padding: 0 2px;
+        line-height: 30px;
     }
 
+    .pagination-bar, .pagination-card,
+    .pagination-circle, .pagination-pill {
+        cursor: pointer;
+    }
 
     /* --- VARIANTE 1 : Cartes Blanches Ombrées --- */
     .pagination-card {
@@ -53,7 +36,7 @@
         align-items: center;
         justify-content: center;
         height: 2.5rem;
-        min-width: 1.25rem;
+        min-width: 2.5rem;
         padding-left: 0.625rem;
         padding-right: 0.625rem;
         font-size: 1rem;
@@ -90,9 +73,9 @@
         transition: all 0.2s ease-in-out;
         user-select: none;
 
-        background-color: var(--color-gray-200);
         color: var(--color-gray-700);
         margin-left: 3px;
+        border: 1px solid var(--color-primary-500);
         margin-right: 3px;
         margin-bottom: 0.375rem;
         width: 2.5rem;
@@ -115,7 +98,7 @@
         align-items: center;
         justify-content: center;
         height: 2.5rem;
-        min-width: 1.25rem;
+        min-width: 2.5rem;
         padding: 0 0.625rem;
         font-size: 1rem;
         text-decoration: none;
@@ -153,19 +136,21 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 2.5rem;
-        min-width: 1.25rem;
-        padding: 0 0.625rem;
+        min-width: 30px;
+        height: 30px;
+        padding: 0 6px;
         font-size: 1rem;
         text-decoration: none;
         transition: all 0.2s ease-in-out;
         user-select: none;
 
+        border: none;
+        border-bottom: 2px solid transparent;
+        border-bottom-color: var(--color-primary-800);
         color: var(--color-gray-800);
         margin-left: 0.125rem;
         margin-right: 0.125rem;
         margin-bottom: 0.375rem;
-        border-radius: var(--ui-radius-base, 4px);
     }
 
     .pagination-bar:hover,
@@ -173,18 +158,27 @@
     .pagination-bar[aria-current="page"] {
         background-color: var(--color-primary-600);
         color: var(--color-white);
+        border-bottom-color: var(--color-primary-500);
     }
 
     /* Conteneur optionnel pour la variante 4 */
     .pagination-bar-container {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        font-family: sans-serif;
-
         background-color: var(--color-white);
         border-radius: var(--ui-radius-base, 4px);
         padding-top: 0.375rem;
+    }
+
+    /* DISABLED */
+    .pagination-pill:disabled,
+    .pagination-pill[disabled],
+    .pagination-card:disabled,
+    .pagination-card[disabled],
+    .pagination-circle:disabled,
+    .pagination-circle[disabled],
+    .pagination-bar:disabled,
+    .pagination-bar[disabled] {
+        opacity: 0.35;
+        cursor: not-allowed;
+        pointer-events: none;
     }
 }

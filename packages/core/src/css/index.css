@@ -41,10 +41,4 @@
 @import "./components/layout/sidebar.css";
 
 /* UI COMPONENTS */
-@import "./components/UI/selection.css";
-@import "./components/UI/select-search.css";
-@import "./components/UI/toggle-3d.css";
-@import "./components/UI/file-dropzone.css";
-@import "./components/UI/alert.css";
-@import "./components/UI/toast.css";
-@import "./components/UI/datatable.css";
+@import "./components/UI/ui-index.css";

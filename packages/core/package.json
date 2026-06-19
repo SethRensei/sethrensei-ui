@@ -23,7 +23,7 @@
         "dev": "vite build --watch",
         "generate:safelist": "tsx scripts/generateSafelist.ts",
         "preview": "vite preview",
-        "web": "vite"
+        "web": "pnpm generate:safelist && vite"
     },
     "keywords": [
         "tailwind",

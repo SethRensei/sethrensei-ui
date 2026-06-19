@@ -248,9 +248,7 @@ function exportPDF(headers, rows, title) {
    ────────────────────────────────────────────────────────────── */
 export class UIDataTable {
     static #instances = new Map();
-
     constructor(tableEl) {
-        // Empêche la double-initialisation si Turbo rejoue avant destroy
         if (tableEl.hasAttribute("data-ui-init")) return;
         this.table = tableEl;
         this.id = tableEl.id || `dt_${Math.random().toString(36).slice(2, 8)}`;
@@ -261,6 +259,8 @@ export class UIDataTable {
             .map((s) => s.trim())
             .filter(Boolean);
         this._paginationStyle = tableEl.dataset.paginationStyle || "pill";
+        // ── NOUVEAU : classes supplémentaires pour les boutons de pagination ──
+        this._paginationClass = tableEl.dataset.paginationClass || "";
         this._columns = [];
         this._rawRows = [];
         this._bodyRows = [];
@@ -282,13 +282,10 @@ export class UIDataTable {
         this._exportMenu = null;
         this._init();
         UIDataTable.#instances.set(this.id, this);
-        dispatch("datatable:init", { id: this.id });
     }
-
-    /* ── STATIC ── */
     static init(root = document) {
         root.querySelectorAll(
-            'table.datatable, table[data-datatable="true"]',
+            'table.datatable,table[data-datatable="true"]',
         ).forEach((t) => {
             if (!UIDataTable.#instances.has(t.id || "_")) new UIDataTable(t);
         });
@@ -297,28 +294,54 @@ export class UIDataTable {
         return UIDataTable.#instances.get(id);
     }
 
-    /* ── INIT ── */
     _init() {
-        this.table.setAttribute("data-ui-init", "1"); // ← garde Turbo
+        this.table.setAttribute("data-ui-init", "1");
         this._parseColumns();
         this._parseRows();
-        this._restoreState();
+        // ── Lire les couleurs depuis data-table-odd / data-table-even sur le tbody ──
+        this._applyStripeColors();
         this._buildUI();
         this._render();
+    }
+
+    /* ─── NOUVEAU : applique les CSS custom properties depuis data-table-odd/even ─── */
+    _applyStripeColors() {
+        const tbody = this.table.querySelector("tbody");
+        if (!tbody) return;
+        const odd = tbody.dataset.tableOdd;
+        const even = tbody.dataset.tableEven;
+        if (odd) {
+            tbody.style.setProperty("--dt-row-odd", odd);
+            // Ajouter un sélecteur CSS via une <style> scoped pour cet id
+        }
+        if (even) {
+            tbody.style.setProperty("--dt-row-even", even);
+        }
+        // Injecter une règle CSS ciblée si l'une des valeurs est présente
+        if (odd || even) {
+            const styleId = `dt-stripe-${this.id}`;
+            if (!document.getElementById(styleId)) {
+                const s = document.createElement("style");
+                s.id = styleId;
+                let rules = "";
+                if (odd)
+                    rules += `#${this.id} tbody tr:nth-child(odd) td{background-color:${odd}!important;}`;
+                if (even)
+                    rules += `#${this.id} tbody tr:nth-child(even) td{background-color:${even}!important;}`;
+                s.textContent = rules;
+                document.head.appendChild(s);
+            }
+        }
     }
 
     _parseColumns() {
         const ths = this.table.querySelectorAll("thead tr:first-child th");
         ths.forEach((th, i) => {
-            // ── Lire le label ORIGINAL avant que _buildThead ne modifie le th ──
-            // On stocke sur le th lui-même pour survivre au snapshot Turbo
-            if (!th.dataset.originalLabel) {
+            if (!th.dataset.originalLabel)
                 th.dataset.originalLabel = th.textContent.trim();
-            }
             this._columns.push({
                 index: i,
-                label: th.textContent.trim(),
-                label: th.dataset.originalLabel, // ← label stable
+                label: th.dataset.originalLabel,
                 sortable: th.dataset.sorted === "true",
                 searchable: th.dataset.search === "true",
                 filterable: th.dataset.filter === "true",
@@ -329,7 +352,6 @@ export class UIDataTable {
             });
         });
     }
-
     _parseRows() {
         const rows = Array.from(this.table.querySelectorAll("tbody tr"));
         this._bodyRows = rows;
@@ -340,40 +362,18 @@ export class UIDataTable {
         );
     }
 
-    _restoreState() {
-        try {
-            const saved = localStorage.getItem(this._storageKey);
-            if (saved) this._state = { ...this._state, ...JSON.parse(saved) };
-        } catch (_) {}
-    }
-    _saveState() {
-        try {
-            localStorage.setItem(this._storageKey, JSON.stringify(this._state));
-        } catch (_) {}
-    }
-
-    /* ── BUILD UI ── */
     _buildUI() {
         const wrapper = el("div", { cls: "dt-root dt-wrapper" });
-        const mh = this.table.style.getPropertyValue("--dt-max-height");
-        if (mh) wrapper.style.setProperty("--dt-max-height", mh);
         this.table.parentNode.insertBefore(wrapper, this.table);
         this._wrapper = wrapper;
-
         wrapper.appendChild(this._buildToolbar());
-
-        // Barre de filtres de dates (auto-générée depuis data-filter-date)
         this._datebar = this._buildDatebar();
         if (this._datebar) wrapper.appendChild(this._datebar);
-
-        // Barre de chips de filtres actifs
         this._filterbar = el("div", {
             cls: "dt-filterbar",
             style: "display:none",
         });
         wrapper.appendChild(this._filterbar);
-
-        // Zone de défilement avec la table
         const scroll = el("div", {
             cls: "dt-scroll",
             role: "region",
@@ -382,7 +382,6 @@ export class UIDataTable {
         scroll.appendChild(this.table);
         wrapper.appendChild(scroll);
         this._scrollArea = scroll;
-
         this._buildThead();
         wrapper.appendChild(this._buildFooter());
     }
@@ -391,8 +390,6 @@ export class UIDataTable {
         const bar = el("div", { cls: "dt-toolbar" });
         const left = el("div", { cls: "dt-toolbar-left" });
         const right = el("div", { cls: "dt-toolbar-right" });
-
-        // Recherche globale
         if (this.table.dataset.search === "true") {
             const wrap = el("div", { cls: "dt-search-wrap" });
             wrap.innerHTML = Icons.search;
@@ -406,18 +403,12 @@ export class UIDataTable {
                     this._state.globalSearch = e.target.value;
                     this._state.page = 1;
                     this._render();
-                    dispatch("datatable:search", {
-                        id: this.id,
-                        value: e.target.value,
-                    });
                 },
             });
             wrap.appendChild(inp);
             left.appendChild(wrap);
             this._globalSearchEl = inp;
         }
-
-        // Taille de page
         const ps = el("select", {
             cls: "dt-page-size",
             "aria-label": "Lignes par page",
@@ -436,13 +427,7 @@ export class UIDataTable {
         });
         left.appendChild(ps);
         bar.appendChild(left);
-
-        // Bouton filtres actifs
-        this._filterBadgeBtn = el("button", {
-            cls: "dt-btn",
-            type: "button",
-            "aria-label": "Filtres actifs",
-        });
+        this._filterBadgeBtn = el("button", { cls: "dt-btn", type: "button" });
         this._filterBadgeBtn.innerHTML = `${Icons.filter} <span class="dt-label-hide">Filtres</span>`;
         this._filterBadge = el(
             "span",
@@ -451,8 +436,6 @@ export class UIDataTable {
         );
         this._filterBadgeBtn.appendChild(this._filterBadge);
         right.appendChild(this._filterBadgeBtn);
-
-        // Export dropdown — 3 scopes : toutes / filtrées / page courante
         if (this._exportFormats.length > 0) {
             const wrap = el("div", { cls: "dt-export-wrap" });
             const btn = el("button", {
@@ -465,43 +448,34 @@ export class UIDataTable {
                     this._toggleExportMenu();
                 },
             });
-            btn.innerHTML = `${Icons.download} <span class="dt-label-hide">Exporter</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;margin-left:2px"><polyline points="6 9 12 15 18 9"/></svg>`;
+            btn.innerHTML = `${Icons.download} <span class="dt-label-hide">Exporter</span>`;
             this._exportToggleBtn = btn;
-
             const menu = el("div", { cls: "dt-export-menu", role: "menu" });
             this._exportMenu = menu;
-
             const fmtLabels = { excel: "Excel", pdf: "PDF", word: "Word" };
             const fmtExts = {
                 excel: ".xlsx",
                 pdf: "impression",
                 word: ".docx",
             };
-
             const scopes = [
                 {
                     key: "all",
-                    label: "All data",
+                    label: "Toutes les données",
                     icon: Icons.download,
                 },
                 {
                     key: "filtered",
-                    label: "Current status (active filters)",
+                    label: "Données filtrées",
                     icon: Icons.filter,
                 },
-                {
-                    key: "page",
-                    label: "Current page only",
-                    icon: Icons.eye,
-                },
+                { key: "page", label: "Page courante", icon: Icons.eye },
             ];
-
             this._exportFormats.forEach((fmt, fi) => {
                 if (fi > 0)
                     menu.appendChild(el("div", { cls: "dt-export-sep" }));
                 const secLabel = el("div", { cls: "dt-export-section-label" });
-                secLabel.innerHTML = `${fmtLabels[fmt] || fmt} <span style="color:var(--dt-text-tertiary)">${fmtExts[fmt] || ""}</span>`;
+                secLabel.innerHTML = `${fmtLabels[fmt] || fmt} <span>${fmtExts[fmt] || ""}</span>`;
                 menu.appendChild(secLabel);
                 scopes.forEach((scope) => {
                     const item = el("button", {
@@ -509,7 +483,6 @@ export class UIDataTable {
                         type: "button",
                         role: "menuitem",
                         onclick: () => {
-                            this.export(fmt, scope.key);
                             this._closeExportMenu();
                         },
                     });
@@ -517,14 +490,11 @@ export class UIDataTable {
                     menu.appendChild(item);
                 });
             });
-
             wrap.appendChild(btn);
             wrap.appendChild(menu);
             right.appendChild(wrap);
             document.addEventListener("click", () => this._closeExportMenu());
         }
-
-        // Refresh
         const refreshBtn = el("button", {
             cls: "dt-btn dt-btn-icon",
             type: "button",
@@ -533,40 +503,25 @@ export class UIDataTable {
         });
         refreshBtn.innerHTML = Icons.refresh;
         right.appendChild(refreshBtn);
-
         bar.appendChild(right);
         return bar;
     }
 
-    /**
-     * Construit la barre de filtres de dates depuis les colonnes data-filter-date.
-     * Label auto : "Filtre par {nom_col}"
-     */
     _buildDatebar() {
         const dateCols = this._columns.filter((c) => c.filterDate);
         if (dateCols.length === 0) return null;
-
         const bar = el("div", { cls: "dt-datebar" });
         bar.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--dt-text-tertiary)">${Icons.calendar}</span>`;
-
         dateCols.forEach((col, i) => {
-            if (i > 0) {
+            if (i > 0)
                 bar.appendChild(el("div", { cls: "dt-datebar-divider" }));
-            }
-
             const group = el("div", { cls: "dt-datebar-group" });
-
             const lbl = el("span", { cls: "dt-datebar-label" });
             lbl.textContent = `Filter by ${col.label} :`;
             group.appendChild(lbl);
-
-            const startId = `dt_ds_${this.id}_${col.index}`;
-            const endId = `dt_de_${this.id}_${col.index}`;
-
             const startInput = el("input", {
                 type: "date",
-                id: startId,
-                "aria-label": `${col.label} — date début`,
+                "aria-label": `${col.label} — début`,
                 oninput: () => {
                     this._state.page = 1;
                     this._render();
@@ -576,24 +531,19 @@ export class UIDataTable {
             sep.textContent = "→";
             const endInput = el("input", {
                 type: "date",
-                id: endId,
-                "aria-label": `${col.label} — date fin`,
+                "aria-label": `${col.label} — fin`,
                 oninput: () => {
                     this._state.page = 1;
                     this._render();
                 },
             });
-
             group.appendChild(startInput);
             group.appendChild(sep);
             group.appendChild(endInput);
             bar.appendChild(group);
-
-            // Référencer les inputs pour le filtrage
             this[`_dateStart_${col.index}`] = startInput;
             this[`_dateEnd_${col.index}`] = endInput;
         });
-
         return bar;
     }
 
@@ -604,13 +554,12 @@ export class UIDataTable {
         ths.forEach((th, i) => {
             const col = this._columns[i];
             if (!col) return;
-
-            // ── Nettoyage défensif : retire ce qu'une init précédente aurait laissé ──
             th.querySelector(".dt-th-inner")?.remove();
             th.querySelector(".dt-th-filter")?.remove();
-            th.removeEventListener("click", th._sortHandler); // voir ci-dessous
-
-            // Checkbox column
+            if (th._sortHandler) {
+                th.removeEventListener("click", th._sortHandler);
+                delete th._sortHandler;
+            }
             if (th.classList.contains("col-check")) {
                 th.innerHTML =
                     '<input type="checkbox" class="dt-check" aria-label="Select all">';
@@ -619,30 +568,22 @@ export class UIDataTable {
                 );
                 return;
             }
-            // Actions column — skip
             if (th.classList.contains("col-action")) return;
-
             const inner = el("div", { cls: "dt-th-inner" });
             const lbl = el("span");
             lbl.textContent = col.label;
             inner.appendChild(lbl);
-
             if (col.sortable) {
                 th.classList.add("sortable");
                 const icon = el("span", { cls: "dt-sort-icon" });
                 icon.innerHTML = Icons.sortNone;
                 inner.appendChild(icon);
-
-                // Stocker le handler pour pouvoir le retirer au prochain cycle
                 th._sortHandler = () => this._cycleSort(i, th, icon);
-                th.addEventListener("click", th._sortHandler);
+                inner.addEventListener("click", th._sortHandler);
                 this._syncSortIcon(i, th, icon);
             }
-
             th.innerHTML = "";
             th.appendChild(inner);
-
-            // Filtre select
             if (col.filterable) {
                 const wrap = el("div", { cls: "dt-th-filter" });
                 const values = [
@@ -654,11 +595,6 @@ export class UIDataTable {
                         this._state.colFilter[col.label] = e.target.value;
                         this._state.page = 1;
                         this._render();
-                        dispatch("datatable:filter", {
-                            id: this.id,
-                            col: col.label,
-                            value: e.target.value,
-                        });
                     },
                 });
                 const emptyOpt = el("option");
@@ -677,8 +613,6 @@ export class UIDataTable {
                 th.appendChild(wrap);
                 this[`_colFilterSel_${i}`] = sel;
             }
-
-            // Filtre texte
             if (col.searchable) {
                 const wrap = el("div", { cls: "dt-th-filter" });
                 const inp = el("input", {
@@ -710,9 +644,7 @@ export class UIDataTable {
         return footer;
     }
 
-    /* ── RENDER ── */
     _render() {
-        this._saveState();
         const filtered = this._applyFilters();
         const sorted = this._applySort(filtered);
         const paged = this._applyPagination(sorted);
@@ -725,10 +657,8 @@ export class UIDataTable {
     _applyFilters() {
         const gs = this._state.globalSearch.toLowerCase();
         return this._rawRows.reduce((acc, row, idx) => {
-            // Recherche globale
             if (gs && !row.some((c) => c.toLowerCase().includes(gs)))
                 return acc;
-            // Recherche par colonne
             for (const [label, val] of Object.entries(this._state.colSearch)) {
                 if (!val) continue;
                 const ci = this._columns.findIndex((c) => c.label === label);
@@ -736,14 +666,12 @@ export class UIDataTable {
                 if (!row[ci]?.toLowerCase().includes(val.toLowerCase()))
                     return acc;
             }
-            // Filtre select
             for (const [label, val] of Object.entries(this._state.colFilter)) {
                 if (!val) continue;
                 const ci = this._columns.findIndex((c) => c.label === label);
                 if (ci < 0) continue;
                 if (row[ci] !== val) return acc;
             }
-            // Filtres de date (multi-colonnes)
             for (const col of this._columns) {
                 if (!col.filterDate) continue;
                 const startEl = this[`_dateStart_${col.index}`];
@@ -807,23 +735,23 @@ export class UIDataTable {
             if (!emptyRow) {
                 emptyRow = el("tr", { cls: "dt-empty-row" });
                 const td = el("td", { colspan: this._columns.length });
-                td.innerHTML = `<div class="dt-empty">${Icons.emptyBox}<div>Aucun résultat / No results</div></div>`;
+                td.innerHTML = `<div class="dt-empty">${Icons.emptyBox}<div>Aucun résultat</div></div>`;
                 emptyRow.appendChild(td);
                 this.table.querySelector("tbody").appendChild(emptyRow);
             }
             emptyRow.style.display = "";
-        } else if (emptyRow) {
-            emptyRow.style.display = "none";
-        }
+        } else if (emptyRow) emptyRow.style.display = "none";
     }
 
+    /* ─── MODIFIÉ : _renderPagination utilise data-pagination-class pour surcharger ─── */
     _renderPagination(total) {
         const { page, pageSize } = this._state;
         const totalPages = Math.max(1, Math.ceil(total / pageSize));
         const nav = this._paginationEl;
         nav.innerHTML = "";
         const style = this._paginationStyle;
-        const cls = `pagination-${style}`;
+        const baseCls = `pagination-${style}`;
+        const extraCls = this._paginationClass; // classes supplémentaires (ex: "hover:bg-gray-500")
 
         const btn = (
             label,
@@ -832,8 +760,9 @@ export class UIDataTable {
             active = false,
             aria = "",
         ) => {
+            // On concatène la classe de base + les classes additionnelles
             const b = el("button", {
-                cls: `${cls}${active ? " active" : ""}`,
+                cls: `${baseCls}${active ? " active" : ""}${extraCls ? " " + extraCls : ""}`,
                 type: "button",
             });
             b.innerHTML = label;
@@ -845,16 +774,15 @@ export class UIDataTable {
                 b.addEventListener("click", () => {
                     this._state.page = pg;
                     this._render();
-                    dispatch("datatable:page", { id: this.id, page: pg });
                 });
             return b;
         };
 
         nav.appendChild(
-            btn(Icons.chevsLeft, 1, page === 1, false, "First page"),
+            btn(Icons.chevsLeft, 1, page === 1, false, "Première page"),
         );
         nav.appendChild(
-            btn(Icons.chevLeft, page - 1, page === 1, false, "Previous"),
+            btn(Icons.chevLeft, page - 1, page === 1, false, "Précédente"),
         );
         this._pageRange(page, totalPages).forEach((p) => {
             if (p === "…")
@@ -865,7 +793,13 @@ export class UIDataTable {
             else nav.appendChild(btn(p, p, false, p === page));
         });
         nav.appendChild(
-            btn(Icons.chevRight, page + 1, page === totalPages, false, "Next"),
+            btn(
+                Icons.chevRight,
+                page + 1,
+                page === totalPages,
+                false,
+                "Suivante",
+            ),
         );
         nav.appendChild(
             btn(
@@ -873,7 +807,7 @@ export class UIDataTable {
                 totalPages,
                 page === totalPages,
                 false,
-                "Last page",
+                "Dernière page",
             ),
         );
     }
@@ -894,15 +828,14 @@ export class UIDataTable {
         this._countEl.innerHTML =
             sortedTotal === total
                 ? `<strong>${from}–${to}</strong> / <strong>${total}</strong>`
-                : `<strong>${from}–${to}</strong> / <strong>${filteredTotal}</strong> filtered <span style="color:var(--dt-text-tertiary)">(${total} total)</span>`;
+                : `<strong>${from}–${to}</strong> / <strong>${filteredTotal}</strong> filtrés <span style="color:var(--dt-text-tertiary)">(${total} total)</span>`;
     }
 
     _renderFilterbar() {
         const bar = this._filterbar;
         bar.innerHTML = "";
         const chips = [];
-
-        if (this._state.globalSearch) {
+        if (this._state.globalSearch)
             chips.push({
                 label: `Recherche : "${this._state.globalSearch}"`,
                 remove: () => {
@@ -912,7 +845,6 @@ export class UIDataTable {
                     this._render();
                 },
             });
-        }
         for (const [label, val] of Object.entries(this._state.colFilter)) {
             if (!val) continue;
             chips.push({
@@ -940,7 +872,6 @@ export class UIDataTable {
                 },
             });
         }
-        // Chips pour filtres date actifs
         for (const col of this._columns) {
             if (!col.filterDate) continue;
             const s = this[`_dateStart_${col.index}`]?.value;
@@ -960,7 +891,6 @@ export class UIDataTable {
                 });
             }
         }
-
         if (chips.length === 0) {
             bar.style.display = "none";
             this._filterBadge.style.display = "none";
@@ -969,7 +899,6 @@ export class UIDataTable {
         bar.style.display = "";
         this._filterBadge.style.display = "";
         this._filterBadge.textContent = chips.length;
-
         bar.appendChild(
             el("span", { cls: "dt-filterbar-label" }, "Filtres actifs :"),
         );
@@ -981,7 +910,7 @@ export class UIDataTable {
                 {
                     cls: "dt-chip-remove",
                     type: "button",
-                    "aria-label": `Remove ${label}`,
+                    "aria-label": `Retirer ${label}`,
                 },
                 "×",
             );
@@ -992,13 +921,12 @@ export class UIDataTable {
         const clearAll = el(
             "button",
             { cls: "dt-chip-clear", type: "button" },
-            "Clear",
+            "Tout effacer",
         );
         clearAll.addEventListener("click", () => this.reset());
         bar.appendChild(clearAll);
     }
 
-    /* ── SORT ── */
     _cycleSort(colIdx, th, iconEl) {
         const col = this._columns[colIdx];
         const cur =
@@ -1006,21 +934,16 @@ export class UIDataTable {
         if (cur === null) {
             this._state.sortDir = "asc";
             this._state.sortCol = col.label;
-        } else if (cur === "asc") {
-            this._state.sortDir = "desc";
-        } else {
+        } else if (cur === "asc") this._state.sortDir = "desc";
+        else {
             this._state.sortDir = null;
             this._state.sortCol = null;
         }
         this._state.page = 1;
         this._syncAllSortIcons();
         this._render();
-        dispatch("datatable:sort", {
-            id: this.id,
-            col: col.label,
-            dir: this._state.sortDir,
-        });
     }
+
     _syncAllSortIcons() {
         Array.from(
             this.table.querySelectorAll("thead tr:first-child th"),
@@ -1029,6 +952,7 @@ export class UIDataTable {
             if (icon) this._syncSortIcon(i, th, icon);
         });
     }
+
     _syncSortIcon(colIdx, th, iconEl) {
         const col = this._columns[colIdx];
         const isActive = this._state.sortCol === col.label;
@@ -1055,8 +979,6 @@ export class UIDataTable {
             tr.classList.toggle("dt-selected", checked);
         });
     }
-
-    /* ── EXPORT MENU ── */
     _toggleExportMenu() {
         const open = this._exportMenu.classList.toggle("open");
         this._exportToggleBtn?.setAttribute("aria-expanded", open);
@@ -1066,73 +988,9 @@ export class UIDataTable {
         this._exportToggleBtn?.setAttribute("aria-expanded", "false");
     }
 
-    /* ── EXPORT DATA ──
-     scope : 'all' | 'filtered' | 'page'
-  ── */
-    _getExportData(scope = "filtered") {
-        const allIndices = this._rawRows.map((_, i) => i);
-        const filteredIndices = this._applyFilters();
-        const sortedIndices = this._applySort(filteredIndices);
-        const pagedIndices = this._applyPagination(sortedIndices);
-
-        let rowIndices;
-        if (scope === "all") rowIndices = allIndices;
-        else if (scope === "page") rowIndices = pagedIndices;
-        else rowIndices = sortedIndices; // 'filtered' default
-
-        const exportCols = this._columns.filter((c) => !c.noExport);
-        const headers = exportCols.map((c) => c.label);
-        const data = rowIndices.map((idx) =>
-            exportCols.map((c) => this._rawRows[idx]?.[c.index] ?? ""),
-        );
-        return { headers, data };
-    }
-
-    /* ── PUBLIC API ── */
     refresh() {
         this._parseRows();
         this._render();
-        dispatch("datatable:refresh", { id: this.id });
-    }
-    search(val) {
-        this._state.globalSearch = val;
-        if (this._globalSearchEl) this._globalSearchEl.value = val;
-        this._state.page = 1;
-        this._render();
-        dispatch("datatable:search", { id: this.id, value: val });
-    }
-    filter(col, val) {
-        this._state.colFilter[col] = val;
-        this._state.page = 1;
-        this._render();
-        dispatch("datatable:filter", { id: this.id, col, value: val });
-    }
-    sort(col, dir) {
-        this._state.sortCol = col;
-        this._state.sortDir = dir;
-        this._state.page = 1;
-        this._syncAllSortIcons();
-        this._render();
-        dispatch("datatable:sort", { id: this.id, col, dir });
-    }
-    page(pageNum) {
-        this._state.page = pageNum;
-        this._render();
-        dispatch("datatable:page", { id: this.id, page: pageNum });
-    }
-    /**
-     * Exporter les données.
-     * @param {'excel'|'pdf'|'word'} format
-     * @param {'all'|'filtered'|'page'} [scope='filtered']
-     */
-    export(format, scope = "filtered") {
-        const { headers, data } = this._getExportData(scope);
-        const name = this.id;
-        const title = `${name} — ${scope === "all" ? "All data" : scope === "page" ? "Current page" : "Filtered data"}`;
-        if (format === "excel") exportExcelOOXML(headers, data, name);
-        else if (format === "pdf") exportPDF(headers, data, title);
-        else if (format === "word") exportWordOOXML(headers, data, title, name);
-        dispatch("datatable:export", { id: this.id, format, scope });
     }
     reset() {
         this._state.globalSearch = "";
@@ -1149,7 +1007,6 @@ export class UIDataTable {
         this.table
             .querySelectorAll(".dt-th-filter input")
             .forEach((inp) => (inp.value = ""));
-        // Reset aussi les inputs de date
         this._columns
             .filter((c) => c.filterDate)
             .forEach((col) => {
@@ -1160,10 +1017,8 @@ export class UIDataTable {
             });
         this._syncAllSortIcons();
         this._render();
-        dispatch("datatable:reset", { id: this.id });
     }
     destroy() {
-        // ── Remettre les <th> dans leur état original ──
         Array.from(
             this.table.querySelectorAll("thead tr:first-child th"),
         ).forEach((th) => {
@@ -1174,8 +1029,6 @@ export class UIDataTable {
                 th.classList.contains("col-action")
             )
                 return;
-
-            // Retirer les éléments ajoutés par _buildThead
             th.querySelector(".dt-th-inner")?.remove();
             th.querySelector(".dt-th-filter")?.remove();
             if (th._sortHandler) {
@@ -1184,21 +1037,14 @@ export class UIDataTable {
             }
             th.classList.remove("sortable", "sort-asc", "sort-desc");
             th.removeAttribute("aria-sort");
-
-            // Remettre le texte brut
             th.textContent = original;
-            // Garder data-original-label pour le prochain cycle
         });
-
         if (this._wrapper) {
-            // Remet la <table> à sa place d'origine, avant le wrapper
             this._wrapper.parentNode.insertBefore(this.table, this._wrapper);
             this._wrapper.remove();
             this._wrapper = null;
         }
-        this.table.removeAttribute("data-ui-init"); // ← indispensable pour Turbo
-        localStorage.removeItem(this._storageKey);
+        this.table.removeAttribute("data-ui-init");
         UIDataTable.#instances.delete(this.id);
-        dispatch("datatable:destroy", { id: this.id });
     }
 }

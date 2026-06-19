@@ -18,9 +18,9 @@ import { uiToast } from "./UI/toast.js";
 import { UIDataTable } from "./UI/datatable.js";
 import { AnimationObserver } from "./Classic/animations.js";
 import { RenAlert } from "./UI/alert-fn.js";
+import { UIEditor } from "./UI/wysiwyg.js";
 
 /* ── Alpine ─────────────────────────────────────────────────── */
-// Alpine ne doit démarrer QU'UNE seule fois, jamais dans init()
 if (!window.__alpineStarted) {
     Alpine.start();
     window.__alpineStarted = true;
@@ -29,15 +29,14 @@ window.uiToast = uiToast;
 window.RenAlert = RenAlert;
 
 /* ── Registry des instances (pour destroy propre) ───────────── */
-const registry = new Map(); // el → instance
-
+const registry = new Map();
 function register(el, instance) {
     registry.set(el, instance);
     return instance;
 }
 
 /* ── Initialisateurs ─────────────────────────────────────────── */
-const INIT_ATTR = "data-ui-init"; // attribut unique pour tous les composants
+const INIT_ATTR = "data-ui-init";
 
 function initUISelects(root) {
     root.querySelectorAll(`.ui-select:not([${INIT_ATTR}])`).forEach((el) => {
@@ -121,6 +120,15 @@ function initModals(root) {
     );
 }
 
+function initEditors(root) {
+    root.querySelectorAll(`[data-ui-editor]:not([${INIT_ATTR}])`).forEach(
+        (el) => {
+            el.setAttribute(INIT_ATTR, "1");
+            register(el, new UIEditor(el));
+        },
+    );
+}
+
 /* ── Init & Destroy ──────────────────────────────────────────── */
 function init(root = document) {
     initUISelects(root);
@@ -130,36 +138,55 @@ function init(root = document) {
     initNavbars(root);
     initModals(root);
     AnimationObserver.init(root);
-
+    initEditors(root);
     root.querySelectorAll(
         `table.datatable:not([data-ui-init]),
-             table[data-datatable="true"]:not([data-ui-init])`,
+         table[data-datatable="true"]:not([data-ui-init])`,
     ).forEach((tableEl) => {
         register(tableEl, new UIDataTable(tableEl));
-        // data-ui-init est posé dans _init(), pas besoin de le répéter
     });
 }
 
 function destroy(root = document) {
     root.querySelectorAll(`[${INIT_ATTR}]`).forEach((el) => {
         const instance = registry.get(el);
-        if (instance?.destroy) instance.destroy(); // nettoyage propre si dispo
+        if (instance?.destroy) instance.destroy();
         registry.delete(el);
-        el.removeAttribute(INIT_ATTR); // ← retire le guard !
+        el.removeAttribute(INIT_ATTR);
     });
 }
 
-/* ── Cycle de vie Turbo ──────────────────────────────────────── */
-// turbo:load couvre : premier chargement + navigation Turbo
-document.addEventListener("turbo:load", () => init(document));
+/* ── Cycle de vie Turbo : on suspend le rendu plutôt que de réagir après ── */
 
-// Avant mise en cache : détruire pour que la restauration soit propre
+// Premier chargement (turbo:load reste déclenché au cold start aussi)
+document.addEventListener("turbo:load", () => {
+    init(document);
+    document.documentElement.classList.remove("ui-loading");
+});
+
+// Navigation Turbo (page complète) : init AVANT affichage
+document.addEventListener("turbo:before-render", (event) => {
+    event.preventDefault();
+    Promise.resolve()
+        .then(() => init(event.detail.newBody))
+        .then(() => event.detail.resume());
+});
+
+// Turbo Frames (chargement partiel) : init AVANT affichage du frame
+document.addEventListener("turbo:before-frame-render", (event) => {
+    event.preventDefault();
+    Promise.resolve()
+        .then(() => init(event.detail.newFrame))
+        .then(() => event.detail.resume());
+});
+
+// Nettoyage avant mise en cache
 document.addEventListener("turbo:before-cache", () => destroy(document));
-
-// Frames Turbo (chargement partiel)
-document.addEventListener("turbo:frame-load", (e) => init(e.target));
 
 // Fallback sans Turbo
 document.addEventListener("DOMContentLoaded", () => {
-    if (!document.documentElement.hasAttribute("data-turbo")) init(document);
+    if (!document.documentElement.hasAttribute("data-turbo")) {
+        init(document);
+        document.documentElement.classList.remove("ui-loading");
+    }
 });
