@@ -19,6 +19,7 @@ import { UIDataTable } from "./UI/datatable.js";
 import { AnimationObserver } from "./Classic/animations.js";
 import { RenAlert } from "./UI/alert-fn.js";
 import { UIEditor } from "./UI/wysiwyg.js";
+import { uiLoader } from "./UI/loader.js";
 
 /* ── Alpine ─────────────────────────────────────────────────── */
 if (!window.__alpineStarted) {
@@ -27,60 +28,7 @@ if (!window.__alpineStarted) {
 }
 window.uiToast = uiToast;
 window.RenAlert = RenAlert;
-
-/* ── Registry des instances (pour destroy propre) ───────────── */
-const registry = new Map();
-function register(el, instance) {
-    registry.set(el, instance);
-    return instance;
-}
-
-/* ── Initialisateurs ─────────────────────────────────────────── */
-const INIT_ATTR = "data-ui-init";
-
-function initUISelects(root) {
-    root.querySelectorAll(`.ui-select:not([${INIT_ATTR}])`).forEach((el) => {
-        if (!el.dataset.placeholder) {
-            const ph = el.querySelector(".ui-select-placeholder");
-            if (ph) el.dataset.placeholder = ph.textContent.trim();
-        }
-        el.setAttribute(INIT_ATTR, "1");
-        register(el, new UISelect(el));
-    });
-}
-
-function initUIFileDropzones(root) {
-    root.querySelectorAll(`.form-file-group:not([${INIT_ATTR}])`).forEach(
-        (el) => {
-            if (
-                !el.querySelector(".dropzone-input") ||
-                !el.querySelector(".dropzone-trigger")
-            )
-                return;
-            el.setAttribute(INIT_ATTR, "1");
-            register(
-                el,
-                new UIFileDropzone(el, {
-                    maxSizeKb: el.dataset.maxSize
-                        ? parseInt(el.dataset.maxSize, 10)
-                        : 10240,
-                    allowedTypes: el.dataset.allowedTypes
-                        ? el.dataset.allowedTypes.split(",")
-                        : ["image/png", "image/jpeg", "image/jpg"],
-                }),
-            );
-        },
-    );
-}
-
-function initUIAlerts(root) {
-    root.querySelectorAll(
-        `.ui-alert[data-dismissible]:not([${INIT_ATTR}])`,
-    ).forEach((el) => {
-        el.setAttribute(INIT_ATTR, "1");
-        register(el, new UIAlert(el));
-    });
-}
+window.uiLoader = uiLoader;
 
 const TYPE_MAP = {
     default: Dropdown,
@@ -93,100 +41,183 @@ const TYPE_MAP = {
     context: DropdownContext,
 };
 
-function initDropdowns(root) {
-    root.querySelectorAll(`.dropdown:not([${INIT_ATTR}])`).forEach((el) => {
-        el.setAttribute(INIT_ATTR, "1");
-        const T = TYPE_MAP[el.dataset.ddType ?? "default"] ?? Dropdown;
-        register(el, new T(el));
-    });
-}
+/* ── Classe centrale : tous les init/destroy regroupés ───────── */
+class UIKit {
+    static INIT_ATTR = "data-ui-init";
 
-function initNavbars(root) {
-    root.querySelectorAll(`.navbar:not([${INIT_ATTR}])`).forEach((el) => {
-        el.setAttribute(INIT_ATTR, "1");
-        register(el, new Navbar(el));
-    });
-}
+    constructor() {
+        this.registry = new Map(); // el → instance
+    }
 
-function initModals(root) {
-    root.querySelectorAll(`[data-modal-target]:not([${INIT_ATTR}])`).forEach(
-        (trigger) => {
+    register(el, instance) {
+        this.registry.set(el, instance);
+        return instance;
+    }
+
+    initUISelects(root) {
+        root.querySelectorAll(`.ui-select:not([${UIKit.INIT_ATTR}])`).forEach(
+            (el) => {
+                if (!el.dataset.placeholder) {
+                    const ph = el.querySelector(".ui-select-placeholder");
+                    if (ph) el.dataset.placeholder = ph.textContent.trim();
+                }
+                el.setAttribute(UIKit.INIT_ATTR, "1");
+                this.register(el, new UISelect(el));
+            },
+        );
+    }
+
+    initUIFileDropzones(root) {
+        root.querySelectorAll(
+            `.form-file-group:not([${UIKit.INIT_ATTR}])`,
+        ).forEach((el) => {
+            if (
+                !el.querySelector(".dropzone-input") ||
+                !el.querySelector(".dropzone-trigger")
+            )
+                return;
+            el.setAttribute(UIKit.INIT_ATTR, "1");
+            this.register(
+                el,
+                new UIFileDropzone(el, {
+                    maxSizeKb: el.dataset.maxSize
+                        ? parseInt(el.dataset.maxSize, 10)
+                        : 10240,
+                    allowedTypes: el.dataset.allowedTypes
+                        ? el.dataset.allowedTypes.split(",")
+                        : ["image/png", "image/jpeg", "image/jpg"],
+                }),
+            );
+        });
+    }
+
+    initUIAlerts(root) {
+        root.querySelectorAll(
+            `.ui-alert[data-dismissible]:not([${UIKit.INIT_ATTR}])`,
+        ).forEach((el) => {
+            el.setAttribute(UIKit.INIT_ATTR, "1");
+            this.register(el, new UIAlert(el));
+        });
+    }
+
+    initDropdowns(root) {
+        root.querySelectorAll(`.dropdown:not([${UIKit.INIT_ATTR}])`).forEach(
+            (el) => {
+                el.setAttribute(UIKit.INIT_ATTR, "1");
+                const T = TYPE_MAP[el.dataset.ddType ?? "default"] ?? Dropdown;
+                this.register(el, new T(el));
+            },
+        );
+    }
+
+    initNavbars(root) {
+        root.querySelectorAll(`.navbar:not([${UIKit.INIT_ATTR}])`).forEach(
+            (el) => {
+                el.setAttribute(UIKit.INIT_ATTR, "1");
+                this.register(el, new Navbar(el));
+            },
+        );
+    }
+
+    initModals(root) {
+        root.querySelectorAll(
+            `[data-modal-target]:not([${UIKit.INIT_ATTR}])`,
+        ).forEach((trigger) => {
             const target = document.querySelector(trigger.dataset.modalTarget);
             if (!target) return;
-            trigger.setAttribute(INIT_ATTR, "1");
-            const modal = register(target, new Modal(target));
+            trigger.setAttribute(UIKit.INIT_ATTR, "1");
+            const modal = this.register(target, new Modal(target));
             trigger.addEventListener("click", () => modal.open());
-        },
-    );
+        });
+    }
+
+    initEditors(root) {
+        root.querySelectorAll(
+            `[data-ui-editor]:not([${UIKit.INIT_ATTR}])`,
+        ).forEach((el) => {
+            el.setAttribute(UIKit.INIT_ATTR, "1");
+            this.register(el, new UIEditor(el));
+        });
+    }
+
+    initDataTables(root) {
+        root.querySelectorAll(
+            `table.datatable:not([${UIKit.INIT_ATTR}]),
+             table[data-datatable="true"]:not([${UIKit.INIT_ATTR}])`,
+        ).forEach((tableEl) => {
+            this.register(tableEl, new UIDataTable(tableEl));
+        });
+    }
+
+    init(root = document) {
+        this.initUISelects(root);
+        this.initUIFileDropzones(root);
+        this.initUIAlerts(root);
+        this.initDropdowns(root);
+        this.initNavbars(root);
+        this.initModals(root);
+        AnimationObserver.init(root);
+        this.initEditors(root);
+        this.initDataTables(root);
+    }
+
+    destroy(root = document) {
+        root.querySelectorAll(`[${UIKit.INIT_ATTR}]`).forEach((el) => {
+            const instance = this.registry.get(el);
+            if (instance?.destroy) instance.destroy();
+            this.registry.delete(el);
+            el.removeAttribute(UIKit.INIT_ATTR);
+        });
+    }
+
+    /** init() protégé : ne plante jamais le masquage du loader */
+    safeInit(root = document) {
+        try {
+            this.init(root);
+        } catch (err) {
+            console.error("[UIKit] erreur pendant l'initialisation :", err);
+        } finally {
+            uiLoader.hide();
+        }
+    }
 }
 
-function initEditors(root) {
-    root.querySelectorAll(`[data-ui-editor]:not([${INIT_ATTR}])`).forEach(
-        (el) => {
-            el.setAttribute(INIT_ATTR, "1");
-            register(el, new UIEditor(el));
-        },
-    );
-}
+export const uiKit = new UIKit();
+window.uiKit = uiKit;
 
-/* ── Init & Destroy ──────────────────────────────────────────── */
-function init(root = document) {
-    initUISelects(root);
-    initUIFileDropzones(root);
-    initUIAlerts(root);
-    initDropdowns(root);
-    initNavbars(root);
-    initModals(root);
-    AnimationObserver.init(root);
-    initEditors(root);
-    root.querySelectorAll(
-        `table.datatable:not([data-ui-init]),
-         table[data-datatable="true"]:not([data-ui-init])`,
-    ).forEach((tableEl) => {
-        register(tableEl, new UIDataTable(tableEl));
-    });
-}
+/* ── Cycle de vie Turbo ──────────────────────────────────────── */
 
-function destroy(root = document) {
-    root.querySelectorAll(`[${INIT_ATTR}]`).forEach((el) => {
-        const instance = registry.get(el);
-        if (instance?.destroy) instance.destroy();
-        registry.delete(el);
-        el.removeAttribute(INIT_ATTR);
-    });
-}
+// Premier chargement (couvre aussi le cold start si Turbo est présent)
+document.addEventListener("turbo:load", () => uiKit.safeInit(document));
 
-/* ── Cycle de vie Turbo : on suspend le rendu plutôt que de réagir après ── */
-
-// Premier chargement (turbo:load reste déclenché au cold start aussi)
-document.addEventListener("turbo:load", () => {
-    init(document);
-    document.documentElement.classList.remove("ui-loading");
-});
-
-// Navigation Turbo (page complète) : init AVANT affichage
+// Navigation Turbo (page complète) : init avant affichage
 document.addEventListener("turbo:before-render", (event) => {
     event.preventDefault();
     Promise.resolve()
-        .then(() => init(event.detail.newBody))
-        .then(() => event.detail.resume());
+        .then(() => uiKit.init(event.detail.newBody))
+        .catch((err) =>
+            console.error("[UIKit] erreur (turbo:before-render) :", err),
+        )
+        .finally(() => event.detail.resume());
 });
 
-// Turbo Frames (chargement partiel) : init AVANT affichage du frame
+// Turbo Frames (chargement partiel)
 document.addEventListener("turbo:before-frame-render", (event) => {
     event.preventDefault();
     Promise.resolve()
-        .then(() => init(event.detail.newFrame))
-        .then(() => event.detail.resume());
+        .then(() => uiKit.init(event.detail.newFrame))
+        .catch((err) =>
+            console.error("[UIKit] erreur (turbo:before-frame-render) :", err),
+        )
+        .finally(() => event.detail.resume());
 });
 
 // Nettoyage avant mise en cache
-document.addEventListener("turbo:before-cache", () => destroy(document));
+document.addEventListener("turbo:before-cache", () => uiKit.destroy(document));
 
-// Fallback sans Turbo
+// Fallback HTML classique (sans Turbo)
 document.addEventListener("DOMContentLoaded", () => {
     if (!document.documentElement.hasAttribute("data-turbo")) {
-        init(document);
-        document.documentElement.classList.remove("ui-loading");
+        uiKit.safeInit(document);
     }
 });

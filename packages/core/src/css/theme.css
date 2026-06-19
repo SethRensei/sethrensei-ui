@@ -3,6 +3,10 @@
     --ui-white: #ffffff;
 }
 
+html.ui-loading {
+    overflow: hidden;
+}
+
 @theme {
 
     --font-sans: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif;
