@@ -2,7 +2,7 @@
 @import "./datatable.css";
 @import "./date-picker.css";
 @import "./file-dropzone.css";
-@import "./loader.css";
+@import "./loading/loader.css";
 @import "./select-search.css";
 @import "./selection.css";
 @import "./toast.css";

@@ -20,6 +20,7 @@ import { AnimationObserver } from "./Classic/animations.js";
 import { RenAlert } from "./UI/alert-fn.js";
 import { UIEditor } from "./UI/wysiwyg.js";
 import { uiLoader } from "./UI/loader.js";
+import { DatePicker } from "./UI/date-picker.js";
 
 /* ── Alpine ─────────────────────────────────────────────────── */
 if (!window.__alpineStarted) {
@@ -140,6 +141,18 @@ class UIKit {
         });
     }
 
+    initDatePickers(root) {
+        root.querySelectorAll(
+            `input[type="date"].ui-datepicker-input:not([${UIKit.INIT_ATTR}]),
+                input[type="date"][data-datepicker]:not([${UIKit.INIT_ATTR}]), 
+                .ui-datepicker-container:not([${UIKit.INIT_ATTR}])`,
+        ).forEach((el) => {
+            if (!DatePicker.isEligible(el)) return;
+            el.setAttribute(UIKit.INIT_ATTR, "1");
+            this.register(el, new DatePicker(el));
+        });
+    }
+
     initDataTables(root) {
         root.querySelectorAll(
             `table.datatable:not([${UIKit.INIT_ATTR}]),
@@ -158,6 +171,7 @@ class UIKit {
         this.initModals(root);
         AnimationObserver.init(root);
         this.initEditors(root);
+        this.initDatePickers(root);
         this.initDataTables(root);
     }
 

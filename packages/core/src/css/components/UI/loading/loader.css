@@ -1,0 +1,28 @@
+@import "./circle.css";
+
+@layer components {
+    .ui-loader-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background: var(--color-primary-100);
+        z-index: 100000;
+        opacity: 1;
+        transition: opacity .35s ease;
+        overflow: hidden;
+    }
+
+    .ui-loader-overlay.ui-loader-hide {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .ui-loader-overlay[hidden] {
+        display: none;
+    }
+
+}

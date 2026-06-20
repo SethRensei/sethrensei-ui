@@ -1,15 +1,16 @@
 /**
- * ════════════════════════════════════════════════════════════════════════
- *  UIEditor  v3
- * ════════════════════════════════════════════════════════════════════════
+ * Nouveauté v4 :
+ *  • getStyledContent() — retourne le HTML avec des classes Tailwind inlinées
+ *    sur chaque balise, de sorte que le contenu reste lisible même avec
+ *    Tailwind Preflight (reset CSS). Utilisez cette méthode pour persister
+ *    en base de données à la place de getContent().
  *
- * Nouveautés v3 :
- *  • Titres H1 à H5 + P (paragraphe normal) dans la barre d'outils
- *  • Tous les boutons de bloc (H1–H5, blockquote) fonctionnent en TOGGLE :
- *      - si le bloc courant est déjà ce type → repasse en <p> (désactivé)
- *      - sinon → applique le type
- *  • Listes imbriquées Tab / Shift+Tab (comportement Word)
- *  • Synchronisation continue vers l'<input>/<textarea> soumis au backend
+ *    Les classes injectées suivent les conventions utilitaires Tailwind
+ *    (prose-like) : taille, graisse, marge, couleur, etc.
+ *    Elles sont configurables via options.tailwindMap.
+ *
+ *  • H1–H5 + P (toggle : 2e clic = repasse en <p>)
+ *  • Listes imbriquées Tab / Shift+Tab
  */
 export class UIEditor {
     #listeners = new Map();
@@ -21,11 +22,32 @@ export class UIEditor {
     #content = null;
     #buttons = new Map();
 
-    // ─── Définition des commandes ────────────────────────────────────────
-    // type "block"  → formatBlock (toggle : si déjà actif → repasse en p)
-    // type "inline" → execCommand state-based (bold, italic, …)
-    // type "list"   → insertUnorderedList / insertOrderedList
-    // type "action" → commande ponctuelle (link, unlink, undo, redo, clear)
+    // ─── Mapping Tailwind par défaut ─────────────────────────────────────
+    // Chaque entrée : balise → classes Tailwind injectées lors de getStyledContent()
+    // Surchargeables via options.tailwindMap
+    static CLASS_MAP = {
+        h1: "ui-editor-content h1",
+        h2: "ui-editor-content h2",
+        h3: "ui-editor-content h3",
+        h4: "ui-editor-content h4",
+        h5: "ui-editor-content h5",
+        p: "ui-editor-content p",
+        blockquote: "ui-editor-content blockquote",
+        ul: "ui-editor-content ul",
+        ol: "ui-editor-content ol",
+        li: "leading-relaxed",
+        strong: "font-bold",
+        em: "italic",
+        u: "underline",
+        s: "line-through",
+        a: "ui-editor-content a",
+        // Listes imbriquées
+        "ul ul": "ui-editor-content ul ul",
+        "ul ul ul": "ui-editor-content ul ul ul",
+        "ol ol": "ui-editor-content ol ol",
+        "ol ol ol": "ui-editor-content ol ol ol"
+    };
+
     static COMMANDS = {
         p: { type: "block", tag: "p", label: "Paragraphe", icon: "P" },
         h1: { type: "block", tag: "h1", label: "Titre 1", icon: "H1" },
@@ -92,6 +114,7 @@ export class UIEditor {
         placeholder: "Écrivez ici…",
         minHeight: "10rem",
         sanitize: true,
+        tailwindMap: null, // surcharge du CLASS_MAP statique
         onChange: null,
         onFocus: null,
         onBlur: null,
@@ -128,10 +151,16 @@ export class UIEditor {
     //  API PUBLIQUE
     // ══════════════════════════════════════════════════════════════════════
 
+    /**
+     * Définit le contenu HTML de l'éditeur.
+     * Accepte aussi le HTML stylé (avec classes Tailwind) retourné par
+     * getStyledContent() : les classes sont ignorées visuellement dans
+     * l'éditeur (qui a ses propres styles CSS) mais restent dans le markup.
+     */
     setContent(html, { silent = false } = {}) {
         const clean = this.#options.sanitize ? this.#sanitize(html) : html;
         this.#content.innerHTML = clean;
-        this.#syncToSource(silent);
+        this.#sync(silent);
         return this;
     }
 
@@ -157,13 +186,55 @@ export class UIEditor {
         return this;
     }
 
-    /** Exécute une commande bas niveau (utilisable depuis l'extérieur). */
     exec(command, value = null) {
         this.#content.focus();
         document.execCommand(command, false, value);
-        this.#syncToSource();
-        this.#refreshToolbarState();
+        this.#sync();
+        this.#refreshState();
         return this;
+    }
+
+    /**
+     * Retourne le HTML avec des classes Tailwind injectées sur chaque balise.
+     * À utiliser pour persister en base de données afin que le contenu
+     * soit lisible même sous Tailwind Preflight (reset CSS).
+     *
+     * @param {object} [mapOverride] — surcharge ponctuelle du tailwindMap
+     * @returns {string} HTML stylé
+     */
+    getStyledContent(mapOverride = {}) {
+        const map = {
+            ...UIEditor.CLASS_MAP,
+            ...(this.#options.tailwindMap ?? {}),
+            ...mapOverride,
+        };
+
+        // Clone le DOM de l'éditeur pour ne pas altérer l'affichage
+        const clone = this.#content.cloneNode(true);
+
+        // Sélecteurs simples (balise directe)
+        const simpleTags = [ "h1", "h2", "h3", "h4", "h5", "p",
+            "blockquote", "ul", "ol", "li", "strong", "em", "u", "s", "a"
+        ];
+        simpleTags.forEach((tag) => {
+            const classes = map[tag];
+            if (!classes) return;
+            clone.querySelectorAll(tag).forEach((el) => {
+                this.#addClasses(el, classes);
+            });
+        });
+
+        // Sélecteurs imbriqués (ul ul, ol ol, etc.)
+        const nestedSelectors = ["ul ul", "ul ul ul", "ol ol", "ol ol ol", "ul ol", "ol ul"];
+        nestedSelectors.forEach((sel) => {
+            const classes = map[sel] ?? map[sel.split(" ")[1]]; // fallback sur le tag
+            if (!classes) return;
+            clone.querySelectorAll(sel).forEach((el) => {
+                this.#addClasses(el, classes);
+            });
+        });
+
+        return clone.innerHTML;
     }
 
     setOptions(o = {}) {
@@ -234,7 +305,6 @@ export class UIEditor {
             }
             const def = UIEditor.COMMANDS[key];
             if (!def) return;
-
             const btn = document.createElement("button");
             btn.type = "button";
             btn.className = "ui-editor-btn";
@@ -268,36 +338,26 @@ export class UIEditor {
 
     #bindEvents() {
         this.#buttons.forEach((btn, key) => {
-            this.#on(btn, "click", () => this.#runCommand(key));
+            this.#on(btn, "click", () => this.#run(key));
         });
-
-        this.#on(this.#content, "input", () => this.#syncToSource());
-
+        this.#on(this.#content, "input", () => this.#sync());
         this.#on(this.#content, "focus", () => {
             this.#wrapper.classList.add("is-focused");
             this.#emit(UIEditor.EVENTS.FOCUS);
             this.#options.onFocus?.call(this, this);
         });
-
         this.#on(this.#content, "blur", () => {
             this.#wrapper.classList.remove("is-focused");
             this.#emit(UIEditor.EVENTS.BLUR);
             this.#options.onBlur?.call(this, this);
         });
-
         this.#on(document, "selectionchange", () => {
-            if (this.isFocused) this.#refreshToolbarState();
+            if (this.isFocused) this.#refreshState();
         });
-
-        this.#on(this.#content, "keydown", (e) => this.#onKeydown(e));
+        this.#on(this.#content, "keydown", (e) => this.#onKey(e));
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    //  GESTION CLAVIER
-    // ══════════════════════════════════════════════════════════════════════
-
-    #onKeydown(e) {
-        // Raccourcis Ctrl/Cmd
+    #onKey(e) {
         if (e.ctrlKey || e.metaKey) {
             const map = {
                 b: "bold",
@@ -309,16 +369,15 @@ export class UIEditor {
             const key = map[e.key.toLowerCase()];
             if (key) {
                 e.preventDefault();
-                this.#runCommand(key);
+                this.#run(key);
             }
             return;
         }
-        // Tab dans une liste → indentation
         if (e.key === "Tab") {
-            const li = this.#getAncestorLi();
+            const li = this.#ancestorLi();
             if (!li) return;
             e.preventDefault();
-            e.shiftKey ? this.#unindentList(li) : this.#indentList(li);
+            e.shiftKey ? this.#unindent(li) : this.#indent(li);
         }
     }
 
@@ -326,7 +385,7 @@ export class UIEditor {
     //  LISTES IMBRIQUÉES
     // ══════════════════════════════════════════════════════════════════════
 
-    #getAncestorLi() {
+    #ancestorLi() {
         const sel = document.getSelection();
         if (!sel || !sel.rangeCount) return null;
         let node = sel.getRangeAt(0).startContainer;
@@ -337,127 +396,98 @@ export class UIEditor {
         return null;
     }
 
-    #indentList(li) {
-        const parentList = li.parentElement;
-        const prevLi = li.previousElementSibling;
-        if (!prevLi) return;
-        const listType = parentList.tagName.toLowerCase();
-        let subList = prevLi.querySelector(`:scope > ${listType}`);
-        if (!subList) {
-            subList = document.createElement(listType);
-            prevLi.appendChild(subList);
+    #indent(li) {
+        const pl = li.parentElement;
+        const prev = li.previousElementSibling;
+        if (!prev) return;
+        const lt = pl.tagName.toLowerCase();
+        let sl = prev.querySelector(`:scope > ${lt}`);
+        if (!sl) {
+            sl = document.createElement(lt);
+            prev.appendChild(sl);
         }
-        subList.appendChild(li);
-        this.#placeCursorInLi(li);
-        this.#syncToSource();
+        sl.appendChild(li);
+        this.#cursorInLi(li);
+        this.#sync();
     }
 
-    #unindentList(li) {
-        const subList = li.parentElement;
-        const parentLi = subList.parentElement;
-        const rootList = this.#content.querySelector("ul, ol");
-        if (!parentLi || parentLi === this.#content || subList === rootList)
-            return;
-        const outerList = parentLi.parentElement;
-        outerList.insertBefore(li, parentLi.nextSibling);
-        if (!subList.children.length) subList.remove();
-        this.#placeCursorInLi(li);
-        this.#syncToSource();
+    #unindent(li) {
+        const sl = li.parentElement;
+        const pl = sl.parentElement;
+        const root = this.#content.querySelector("ul, ol");
+        if (!pl || pl === this.#content || sl === root) return;
+        pl.parentElement.insertBefore(li, pl.nextSibling);
+        if (!sl.children.length) sl.remove();
+        this.#cursorInLi(li);
+        this.#sync();
     }
 
-    #placeCursorInLi(li) {
+    #cursorInLi(li) {
         const sel = document.getSelection();
-        const range = document.createRange();
-        let textNode = null;
-        for (const child of li.childNodes) {
-            if (child.nodeType === Node.TEXT_NODE) {
-                textNode = child;
+        const r = document.createRange();
+        let tn = null;
+        for (const ch of li.childNodes) {
+            if (ch.nodeType === Node.TEXT_NODE) {
+                tn = ch;
                 break;
             }
-            if (child.nodeName !== "UL" && child.nodeName !== "OL") {
-                const walker = document.createTreeWalker(
-                    child,
-                    NodeFilter.SHOW_TEXT,
-                );
-                const found = walker.nextNode();
-                if (found) {
-                    textNode = found;
+            if (ch.nodeName !== "UL" && ch.nodeName !== "OL") {
+                const w = document.createTreeWalker(ch, NodeFilter.SHOW_TEXT);
+                const f = w.nextNode();
+                if (f) {
+                    tn = f;
                     break;
                 }
             }
         }
-        if (textNode) {
-            range.setStart(textNode, textNode.length);
-            range.collapse(true);
+        if (tn) {
+            r.setStart(tn, tn.length);
+            r.collapse(true);
         } else {
-            range.selectNodeContents(li);
-            range.collapse(false);
+            r.selectNodeContents(li);
+            r.collapse(false);
         }
         sel.removeAllRanges();
-        sel.addRange(range);
+        sel.addRange(r);
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    //  EXÉCUTION DES COMMANDES
+    //  COMMANDES
     // ══════════════════════════════════════════════════════════════════════
 
-    #runCommand(key) {
+    #run(key) {
         const def = UIEditor.COMMANDS[key];
         if (!def) return;
-
         this.#content.focus();
 
-        switch (def.type) {
-            case "block":
-                this.#toggleBlock(def.tag);
-                break;
-
-            case "inline":
-                document.execCommand(def.cmd, false, null);
-                break;
-
-            case "list":
-                document.execCommand(def.cmd, false, null);
-                break;
-
-            case "action":
-                if (key === "link") {
-                    this.#promptLink();
-                    return;
-                }
-                document.execCommand(def.cmd, false, null);
-                break;
+        if (def.type === "block") {
+            this.#toggleBlock(def.tag);
+        } else if (def.type === "inline") {
+            document.execCommand(def.cmd, false, null);
+        } else if (def.type === "list") {
+            document.execCommand(def.cmd, false, null);
+        } else if (key === "link") {
+            this.#promptLink();
+            return;
+        } else {
+            document.execCommand(def.cmd, false, null);
         }
 
-        this.#syncToSource();
-        this.#refreshToolbarState();
+        this.#sync();
+        this.#refreshState();
     }
 
-    /**
-     * Toggle d'un bloc (H1-H5, blockquote, p) :
-     *   - si le bloc sous le curseur est DÉJÀ ce tag → repasse en <p>
-     *   - sinon → applique le tag
-     *
-     * Implémentation sans dépendance externe : on utilise execCommand
-     * "formatBlock" qui est la seule API universelle pour les blocs.
-     * Pour <blockquote> le navigateur utilise "blockquote",
-     * pour <p> il utilise "p" ou "div" selon le navigateur →
-     * on normalise en forçant "p" quand on désactive.
-     */
     #toggleBlock(tag) {
-        const current = document
+        const cur = document
             .queryCommandValue("formatBlock")
             .toLowerCase()
             .trim();
-        // Les navigateurs retournent parfois "div" pour <p> par défaut
-        const normalize = (t) => (t === "div" ? "p" : t);
-
-        if (normalize(current) === tag) {
-            // Déjà actif → repasse en paragraphe normal
-            document.execCommand("formatBlock", false, "p");
-        } else {
-            document.execCommand("formatBlock", false, tag);
-        }
+        const norm = (t) => (t === "div" ? "p" : t);
+        document.execCommand(
+            "formatBlock",
+            false,
+            norm(cur) === tag ? "p" : tag,
+        );
     }
 
     #promptLink() {
@@ -471,49 +501,47 @@ export class UIEditor {
         const url = window.prompt("URL du lien :", "https://");
         if (!url) return;
         document.execCommand("createLink", false, url);
-        this.#syncToSource();
-        this.#refreshToolbarState();
+        this.#sync();
+        this.#refreshState();
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    //  ÉTAT DE LA BARRE D'OUTILS
-    // ══════════════════════════════════════════════════════════════════════
-
-    #refreshToolbarState() {
-        const currentBlock = document
+    #refreshState() {
+        const cur = document
             .queryCommandValue("formatBlock")
             .toLowerCase()
             .trim();
-        const normalize = (t) => (t === "div" ? "p" : t);
-
+        const norm = (t) => (t === "div" ? "p" : t);
         this.#buttons.forEach((btn, key) => {
             const def = UIEditor.COMMANDS[key];
             let active = false;
-
             try {
-                switch (def.type) {
-                    case "block":
-                        active = normalize(currentBlock) === def.tag;
-                        break;
-                    case "inline":
-                    case "list":
-                        active = document.queryCommandState(def.cmd);
-                        break;
-                    // "action" → jamais actif (undo/redo/clear/link)
+                if (def.type === "block") {
+                    active = norm(cur) === def.tag;
+                } else if (def.type === "inline" || def.type === "list") {
+                    active = document.queryCommandState(def.cmd);
                 }
             } catch {
                 active = false;
             }
-
             btn.classList.toggle("is-active", active);
         });
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    //  SYNCHRONISATION & UTILITAIRES
+    //  UTILITAIRES
     // ══════════════════════════════════════════════════════════════════════
 
-    #syncToSource(silent = false) {
+    /** Ajoute des classes sans supprimer les existantes. */
+    #addClasses(el, classString) {
+        classString
+            .trim()
+            .split(/\s+/)
+            .forEach((c) => {
+                if (c) el.classList.add(c);
+            });
+    }
+
+    #sync(silent = false) {
         const html = this.getContent();
         this.#source.value = html;
         this.#source.dispatchEvent(new Event("input", { bubbles: true }));
@@ -551,11 +579,11 @@ export class UIEditor {
     }
 
     #emit(eventName, detail = {}) {
-        const event = new CustomEvent(eventName, {
+        const ev = new CustomEvent(eventName, {
             bubbles: true,
             cancelable: true,
             detail: { editor: this, element: this.#wrapper, ...detail },
         });
-        return this.#wrapper.dispatchEvent(event);
+        return this.#wrapper.dispatchEvent(ev);
     }
 }

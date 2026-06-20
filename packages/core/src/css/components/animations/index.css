@@ -44,6 +44,15 @@
         animation-fill-mode: both;
     }
 
+    [data-anim-closing] {
+        opacity: 1;
+        animation-name: var(--ui-anim-name);
+        animation-duration: var(--ui-anim-duration, 300ms);
+        animation-timing-function: var(--ui-anim-easing, var(--ease-out));
+        animation-delay: var(--ui-anim-delay, 0ms);
+        animation-fill-mode: both;
+    }
+
     .ui-anim-flip-x {
         animation-name: ui-flip-x;
     }

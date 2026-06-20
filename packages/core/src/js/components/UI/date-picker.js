@@ -1,69 +1,66 @@
 /**
- * ════════════════════════════════════════════════════════════════════════
- *  DatePicker
- * ════════════════════════════════════════════════════════════════════════
+ * Fix v4 :
+ *  • La fermeture "clic extérieur" utilisait wrapper.contains(e.target),
+ *    mais le panneau étant dans le wrapper, tout clic à l'intérieur était
+ *    bien détecté… sauf que l'ordre de propagation faisait que le listener
+ *    document "click" (phase bubble) se déclenchait APRÈS le listener sur
+ *    la grille, provoquant une fermeture immédiate post-sélection.
+ *    → Solution : écouter sur "pointerdown" pour la fermeture extérieure
+ *      (se déclenche avant le "click" et ne consomme pas l'événement).
  *
- * Deux modes d'utilisation :
+ *  • Flux picker confirmé :
+ *      Clic ANNÉE → #viewDate.year mis à jour, reste sur picker (re-render)
+ *      Clic MOIS  → #viewDate.month mis à jour avec l'année courante,
+ *                   retour au calendrier (#showView("days"))
  *
- *  1) MODE "input"  → new DatePicker(document.querySelector('input[type="date"]'))
- *     L'input natif reste dans le DOM (et donc dans le <form>), mais il est
- *     visuellement masqué. Sa `value` (format yyyy-mm-dd, standard HTML)
- *     reste la source de vérité envoyée au backend (PHP, Node, etc.).
- *     Un bouton d'affichage + un panneau calendrier "maison" sont injectés
- *     juste à côté.
- *
- *  2) MODE "div"    → new DatePicker(document.querySelector('.my-datepicker'))
- *     Si l'élément n'est PAS un <input type="date">, on construit tout de
- *     bout en bout à l'intérieur de cet élément :
- *       - un <input type="hidden" name="..."> (valeur soumise au backend)
- *       - un bouton d'affichage
- *       - le panneau calendrier
- *     Le nom du champ est lu depuis `data-name` (ou `options.name`).
- *
- * Architecture identique à Modal.js : champs privés ES2022, options
- * statiques fusionnables, registre de listeners pour un destroy() propre,
- * et émission de CustomEvent (bubbles + cancelable) préfixés "datepicker:".
- *
- * API publique calquée sur Modal : open(), close(), toggle(), setOptions(),
- * getOptions(), destroy(), getters isOpen / element / input / value.
+ * Deux modes :
+ *   MODE "input" → new DatePicker(input[type="date"])
+ *   MODE "div"   → new DatePicker(div[data-name="..."])
  */
-export class UIDatePicker {
-    // ─── Champs privés ──────────────────────────────────────────────────────
+export class DatePicker {
     #isOpen = false;
+    #view = "days";
     #listeners = new Map();
     #options = {};
 
-    #mode = "input"; // "input" | "div"
-    #nativeInput = null; // input[type=date] (mode input) ou input[hidden] (mode div)
-    #wrapper = null; // conteneur position:relative
-    #displayBtn = null; // bouton visible affichant la date formatée
-    #panel = null; // panneau calendrier (.ui-datepicker-panel)
-    #titleEl = null; // libellé "Juin 2026"
-    #gridEl = null; // grille des jours
+    #mode = "input";
+    #nativeInput = null;
+    #wrapper = null;
+    #displayBtn = null;
+    #panel = null;
 
-    #selectedDate = null; // Date | null
-    #viewDate = new Date(); // mois actuellement affiché dans le calendrier
+    #daysView = null;
+    #titleBtn = null;
+    #prevBtn = null;
+    #nextBtn = null;
+    #gridEl = null;
+
+    #pickerView = null;
+    #decadeLabel = null;
+    #monthsGrid = null;
+    #yearsGrid = null;
+    #pickerBackBtn = null;
+
+    #selectedDate = null;
+    #viewDate = new Date();
+    #decadeStart = null;
     #minDate = null;
     #maxDate = null;
-    #view = "days"; // "days" | "months" | "years" — vue actuelle du panneau
 
-    // ─── Valeurs par défaut ─────────────────────────────────────────────────
     static DEFAULTS = {
         locale: "fr-FR",
-        // Format d'affichage : "long" | "medium" | "short" | "full" (Intl)
-        // OU un patron à jetons : "dd/mm/yyyy"
         format: "dd/mm/yyyy",
-        firstDayOfWeek: 1, // 0 = dimanche, 1 = lundi
-        min: null, // Date | "yyyy-mm-dd" | null
-        max: null, // Date | "yyyy-mm-dd" | null
+        firstDayOfWeek: 1,
+        min: null,
+        max: null,
         closeOnSelect: true,
-        showFooter: true, // boutons "Aujourd'hui" / "Effacer"
+        showFooter: true,
         animationClass: "show",
         placeholder: "jj/mm/aaaa",
-        name: null, // requis en mode "div" si data-name absent
+        name: null,
         onOpen: null,
         onClose: null,
-        onChange: null, // callback(date, picker)
+        onChange: null,
     };
 
     static EVENTS = {
@@ -76,44 +73,73 @@ export class UIDatePicker {
     };
 
     /**
-     * @param {HTMLElement} element  — input[type=date] OU conteneur <div>
-     * @param {object}      options  — surcharge de DEFAULTS
+     * Détecte si un élément remplit les conditions d'opt-in du DatePicker.
+     * Utile pour le registry (initDatePickers) afin de filtrer sans instancier.
+     *
+     * Conditions d'activation sur un <input type="date"> :
+     *   • possède la classe "ui-datepicker-input"  OU
+     *   • possède l'attribut "data-datepicker" (valeur quelconque)
+     *
+     * Un conteneur <div> (mode "div") est toujours éligible car placé
+     * intentionnellement par le développeur.
+     *
+     * @param {HTMLElement} element
+     * @returns {boolean}
      */
+    static isEligible(element) {
+        if (!(element instanceof HTMLElement)) return false;
+        if (!(element instanceof HTMLInputElement)) return true; // div → toujours ok
+        if (element.type !== "date") return false;
+        return (
+            element.classList.contains("ui-datepicker-input") ||
+            element.hasAttribute("data-datepicker")
+        );
+    }
+
     constructor(element, options = {}) {
-        if (!(element instanceof HTMLElement)) {
+        if (!(element instanceof HTMLElement))
             throw new TypeError(
                 "[DatePicker] Le premier argument doit être un HTMLElement.",
+            );
+
+        // ── Opt-in obligatoire pour les <input type="date"> ────────────────
+        // Sans la classe "ui-datepicker-input" ou l'attribut "data-datepicker",
+        // l'input natif n'est PAS transformé : aucun input date de la page
+        // ne sera intercepté sans consentement explicite du développeur.
+        if (
+            element instanceof HTMLInputElement &&
+            element.type === "date" &&
+            !element.classList.contains("ui-datepicker-input") &&
+            !element.hasAttribute("data-datepicker")
+        ) {
+            throw new TypeError(
+                '[DatePicker] Un <input type="date"> doit posséder la classe ' +
+                    '"ui-datepicker-input" ou l\'attribut "data-datepicker" pour être activé.\n' +
+                    "Utilisez DatePicker.isEligible(el) pour tester avant d'instancier.",
             );
         }
 
         this.#options = { ...DatePicker.DEFAULTS, ...options };
-        this.#minDate = this.#parseDate(this.#options.min);
-        this.#maxDate = this.#parseDate(this.#options.max);
-
+        this.#minDate = this.#pd(this.#options.min);
+        this.#maxDate = this.#pd(this.#options.max);
         this.#mode =
             element instanceof HTMLInputElement && element.type === "date"
                 ? "input"
                 : "div";
 
         this.#mode === "input"
-            ? this.#buildFromInput(element)
-            : this.#buildFromContainer(element);
+            ? this.#fromInput(element)
+            : this.#fromDiv(element);
 
-        // État initial à partir de la valeur native (input[type=date] ⇒ yyyy-mm-dd)
-        const initial = this.#parseISO(this.#nativeInput.value);
-        if (initial) {
-            this.#selectedDate = initial;
-            this.#viewDate = new Date(
-                initial.getFullYear(),
-                initial.getMonth(),
-                1,
-            );
+        const ini = this.#parseISO(this.#nativeInput.value);
+        if (ini) {
+            this.#selectedDate = ini;
+            this.#viewDate = new Date(ini.getFullYear(), ini.getMonth(), 1);
         }
+        this.#decadeStart = Math.floor(this.#viewDate.getFullYear() / 10) * 10;
 
         this.#renderDisplay();
-        this.#renderCalendar();
-
-        // ── Stockage de l'instance (cohérent avec Modal._modalInstance) ──────
+        this.#renderDays();
         this.#wrapper._datePickerInstance = this;
     }
 
@@ -121,18 +147,14 @@ export class UIDatePicker {
     //  API PUBLIQUE
     // ══════════════════════════════════════════════════════════════════════
 
-    /** Ouvre le panneau calendrier. */
     open() {
         if (this.#isOpen) return this;
+        if (!this.#emit(DatePicker.EVENTS.BEFORE_OPEN)) return this;
 
-        const allowed = this.#emit(DatePicker.EVENTS.BEFORE_OPEN);
-        if (!allowed) return this;
-
-        // Recentre le calendrier sur la date sélectionnée (ou aujourd'hui)
         const ref = this.#selectedDate ?? new Date();
         this.#viewDate = new Date(ref.getFullYear(), ref.getMonth(), 1);
-        this.#view = "days";
-        this.#renderCalendar();
+        this.#decadeStart = Math.floor(ref.getFullYear() / 10) * 10;
+        this.#showView("days");
 
         this.#panel.classList.add(this.#options.animationClass);
         this.#panel.hidden = false;
@@ -141,16 +163,12 @@ export class UIDatePicker {
 
         this.#emit(DatePicker.EVENTS.OPEN);
         this.#options.onOpen?.call(this, this);
-
         return this;
     }
 
-    /** Ferme le panneau calendrier. */
     close() {
         if (!this.#isOpen) return this;
-
-        const allowed = this.#emit(DatePicker.EVENTS.BEFORE_CLOSE);
-        if (!allowed) return this;
+        if (!this.#emit(DatePicker.EVENTS.BEFORE_CLOSE)) return this;
 
         this.#panel.classList.remove(this.#options.animationClass);
         this.#panel.hidden = true;
@@ -159,266 +177,318 @@ export class UIDatePicker {
 
         this.#emit(DatePicker.EVENTS.CLOSE);
         this.#options.onClose?.call(this, this);
-
         return this;
     }
 
-    /** Bascule ouvert/fermé. */
     toggle() {
         return this.#isOpen ? this.close() : this.open();
     }
 
-    /**
-     * Définit la date sélectionnée et synchronise l'input réel.
-     * @param {Date|string|null} date — Date, "yyyy-mm-dd" ou null pour effacer
-     * @param {object} [opts]
-     * @param {boolean} [opts.silent=false] — si true, n'émet pas CHANGE / onChange
-     */
     setDate(date, { silent = false } = {}) {
         const parsed = date instanceof Date ? date : this.#parseISO(date);
-
-        if (parsed && this.#isDisabled(parsed)) return this;
-
-        if (!silent) {
-            const allowed = this.#emit(DatePicker.EVENTS.BEFORE_CHANGE, {
-                date: parsed,
-            });
-            if (!allowed) return this;
-        }
+        if (parsed && this.#isDisabledDate(parsed)) return this;
+        if (
+            !silent &&
+            !this.#emit(DatePicker.EVENTS.BEFORE_CHANGE, { date: parsed })
+        )
+            return this;
 
         this.#selectedDate = parsed;
-        this.#nativeInput.value = parsed ? this.#toISO(parsed) : "";
-        // Notifie les frameworks/écoutes externes (React, Alpine, ...)
+        this.#nativeInput.value = parsed ? this.#iso(parsed) : "";
         this.#nativeInput.dispatchEvent(new Event("input", { bubbles: true }));
         this.#nativeInput.dispatchEvent(new Event("change", { bubbles: true }));
 
         this.#renderDisplay();
-        if (this.#isOpen) this.#renderCalendar();
+        if (this.#isOpen) this.#renderDays();
 
         if (!silent) {
             this.#emit(DatePicker.EVENTS.CHANGE, { date: parsed });
             this.#options.onChange?.call(this, parsed, this);
         }
-
         if (parsed && this.#options.closeOnSelect) this.close();
-
         return this;
     }
 
-    /** Efface la date sélectionnée. */
     clear() {
         return this.setDate(null);
     }
-
-    /** @returns {Date|null} */
     getDate() {
         return this.#selectedDate ? new Date(this.#selectedDate) : null;
     }
 
-    /**
-     * Met à jour les options après instanciation.
-     * @param {object} newOptions
-     */
-    setOptions(newOptions = {}) {
-        this.#options = { ...this.#options, ...newOptions };
-        if ("min" in newOptions)
-            this.#minDate = this.#parseDate(newOptions.min);
-        if ("max" in newOptions)
-            this.#maxDate = this.#parseDate(newOptions.max);
-
+    setOptions(o = {}) {
+        this.#options = { ...this.#options, ...o };
+        if ("min" in o) this.#minDate = this.#pd(o.min);
+        if ("max" in o) this.#maxDate = this.#pd(o.max);
         this.#renderDisplay();
-        this.#renderCalendar();
+        if (this.#isOpen) this.#renderDays();
         return this;
     }
 
-    /** @returns {object} copie des options actuelles */
     getOptions() {
         return { ...this.#options };
     }
 
-    /** Nettoie listeners + DOM injecté. À appeler avant suppression du DOM. */
     destroy() {
         if (this.#isOpen) this.close();
-
-        this.#listeners.forEach((handlers, target) => {
-            handlers.forEach(({ event, handler }) => {
-                target.removeEventListener(event, handler);
-            });
-        });
+        this.#listeners.forEach((handlers, target) =>
+            handlers.forEach(({ event, handler }) =>
+                target.removeEventListener(event, handler),
+            ),
+        );
         this.#listeners.clear();
-
-        // Remet l'input natif visible si on est en mode "input"
         if (this.#mode === "input") {
             this.#nativeInput.classList.remove("ui-datepicker-native");
             this.#wrapper.replaceWith(this.#nativeInput);
         }
-
         this.#panel.remove();
         this.#displayBtn.remove();
         delete this.#wrapper._datePickerInstance;
     }
 
-    // ─── Getters publics (lecture seule) ──────────────────────────────────
-
-    /** @returns {boolean} */
     get isOpen() {
         return this.#isOpen;
     }
-
-    /** @returns {HTMLElement} conteneur racine du widget */
     get element() {
         return this.#wrapper;
     }
-
-    /** @returns {HTMLInputElement} input réellement soumis au formulaire */
     get input() {
         return this.#nativeInput;
     }
-
-    /** @returns {string} valeur ISO "yyyy-mm-dd" ou "" */
     get value() {
-        return this.#selectedDate ? this.#toISO(this.#selectedDate) : "";
+        return this.#selectedDate ? this.#iso(this.#selectedDate) : "";
     }
 
     // ══════════════════════════════════════════════════════════════════════
     //  CONSTRUCTION DU DOM
     // ══════════════════════════════════════════════════════════════════════
 
-    /** Mode "input" : on enveloppe l'input[type=date] existant. */
-    #buildFromInput(input) {
+    #fromInput(input) {
         this.#nativeInput = input;
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "ui-datepicker";
-        input.replaceWith(wrapper);
-        wrapper.appendChild(input);
-
-        // L'input reste dans le DOM/form, mais visuellement masqué.
+        const w = document.createElement("div");
+        w.className = "ui-datepicker";
+        input.replaceWith(w);
+        w.appendChild(input);
         input.classList.add("ui-datepicker-native");
         input.setAttribute("tabindex", "-1");
         input.setAttribute("aria-hidden", "true");
-
-        this.#wrapper = wrapper;
-        this.#buildDisplayAndPanel();
+        this.#wrapper = w;
+        this.#buildPanel();
     }
 
-    /** Mode "div" : on construit tout (input hidden + UI) dans le conteneur. */
-    #buildFromContainer(container) {
+    #fromDiv(container) {
         container.classList.add("ui-datepicker");
         this.#wrapper = container;
-
         const name = this.#options.name ?? container.dataset.name ?? "";
-        if (!name) {
-            console.warn(
-                '[DatePicker] Aucun "name" fourni (options.name ou data-name) : ' +
-                    "le champ caché ne sera pas soumis avec un nom au backend.",
-            );
-        }
-
+        if (!name) console.warn('[DatePicker] Aucun "name" fourni.');
         const hidden = document.createElement("input");
         hidden.type = "hidden";
         hidden.name = name;
         if (container.dataset.value) hidden.value = container.dataset.value;
         container.appendChild(hidden);
-
         this.#nativeInput = hidden;
-        this.#buildDisplayAndPanel();
+        this.#buildPanel();
     }
 
-    /** Construit le bouton d'affichage + le panneau calendrier (commun aux 2 modes). */
-    #buildDisplayAndPanel() {
-        // ── Bouton d'affichage ────────────────────────────────────────────
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "ui-datepicker-input";
-        btn.setAttribute("aria-haspopup", "dialog");
-        btn.setAttribute("aria-expanded", "false");
-        btn.innerHTML = `
+    #buildPanel() {
+        // ── Bouton déclencheur ────────────────────────────────────────────
+        const db = document.createElement("button");
+        db.type = "button";
+        db.className = "ui-datepicker-input";
+        db.setAttribute("aria-haspopup", "dialog");
+        db.setAttribute("aria-expanded", "false");
+        db.innerHTML = `
             <span class="ui-datepicker-value"></span>
             <svg class="ui-datepicker-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
                 <path d="M3 9.5h18" stroke="currentColor" stroke-width="1.5"/>
                 <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>`;
-        this.#wrapper.appendChild(btn);
-        this.#displayBtn = btn;
-
-        this.#on(btn, "click", () => this.toggle());
-        this.#on(btn, "keydown", (e) => {
+        this.#wrapper.appendChild(db);
+        this.#displayBtn = db;
+        this.#on(db, "click", () => this.toggle());
+        this.#on(db, "keydown", (e) => {
             if (e.key === "ArrowDown" && !this.#isOpen) {
                 e.preventDefault();
                 this.open();
             }
         });
 
-        // ── Panneau calendrier ───────────────────────────────────────────
+        // ── Panneau ───────────────────────────────────────────────────────
         const panel = document.createElement("div");
         panel.className = "ui-datepicker-panel";
         panel.setAttribute("role", "dialog");
         panel.hidden = true;
 
-        const header = document.createElement("div");
-        header.className = "ui-datepicker-header";
+        // ─ Vue jours ──────────────────────────────────────────────────────
+        const dv = document.createElement("div");
+        dv.className = "ui-datepicker-days-view";
 
-        const prevBtn = document.createElement("button");
-        prevBtn.type = "button";
-        prevBtn.className = "ui-datepicker-nav-btn";
-        prevBtn.setAttribute("aria-label", "Mois précédent");
-        prevBtn.innerHTML = "&#8249;";
+        const dh = document.createElement("div");
+        dh.className = "ui-datepicker-header";
 
-        const title = document.createElement("button");
-        title.type = "button";
-        title.className = "ui-datepicker-title";
-        title.setAttribute("aria-label", "Choisir le mois et l'année");
+        const prev = document.createElement("button");
+        prev.type = "button";
+        prev.className = "ui-datepicker-nav-btn";
+        prev.setAttribute("aria-label", "Mois précédent");
+        prev.innerHTML = "&#8249;";
 
-        const nextBtn = document.createElement("button");
-        nextBtn.type = "button";
-        nextBtn.className = "ui-datepicker-nav-btn";
-        nextBtn.setAttribute("aria-label", "Mois suivant");
-        nextBtn.innerHTML = "&#8250;";
+        const titleBtn = document.createElement("button");
+        titleBtn.type = "button";
+        titleBtn.className = "ui-datepicker-title ui-datepicker-title--btn";
+        titleBtn.setAttribute("aria-label", "Choisir le mois et l'année");
+        titleBtn.innerHTML = `
+            <span class="ui-datepicker-title-text"></span>
+            <svg class="ui-datepicker-title-arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
 
-        header.append(prevBtn, title, nextBtn);
+        const nxt = document.createElement("button");
+        nxt.type = "button";
+        nxt.className = "ui-datepicker-nav-btn";
+        nxt.setAttribute("aria-label", "Mois suivant");
+        nxt.innerHTML = "&#8250;";
 
+        dh.append(prev, titleBtn, nxt);
         const grid = document.createElement("div");
         grid.className = "ui-datepicker-grid";
-
-        panel.append(header);
-        panel.append(grid);
+        dv.append(dh, grid);
 
         if (this.#options.showFooter) {
-            const footer = document.createElement("div");
-            footer.className = "ui-datepicker-footer";
-
-            const todayBtn = document.createElement("button");
-            todayBtn.type = "button";
-            todayBtn.className = "ui-datepicker-footer-btn";
-            todayBtn.textContent = "Aujourd'hui";
-            this.#on(todayBtn, "click", () => this.setDate(new Date()));
-
-            const clearBtn = document.createElement("button");
-            clearBtn.type = "button";
-            clearBtn.className =
+            const foot = document.createElement("div");
+            foot.className = "ui-datepicker-footer";
+            const tb = document.createElement("button");
+            tb.type = "button";
+            tb.className = "ui-datepicker-footer-btn";
+            tb.textContent = "Aujourd'hui";
+            this.#on(tb, "click", () => this.setDate(new Date()));
+            const cb = document.createElement("button");
+            cb.type = "button";
+            cb.className =
                 "ui-datepicker-footer-btn ui-datepicker-footer-btn--ghost";
-            clearBtn.textContent = "Effacer";
-            this.#on(clearBtn, "click", () => this.clear());
-
-            footer.append(todayBtn, clearBtn);
-            panel.append(footer);
+            cb.textContent = "Effacer";
+            this.#on(cb, "click", () => this.clear());
+            foot.append(tb, cb);
+            dv.append(foot);
         }
 
+        // ─ Vue picker ─────────────────────────────────────────────────────
+        const pv = document.createElement("div");
+        pv.className = "ui-datepicker-picker-view";
+        pv.hidden = true;
+
+        const ph = document.createElement("div");
+        ph.className = "ui-datepicker-header";
+
+        const dp = document.createElement("button");
+        dp.type = "button";
+        dp.className = "ui-datepicker-nav-btn";
+        dp.setAttribute("aria-label", "Décennie précédente");
+        dp.innerHTML = "&#8249;";
+
+        const dl = document.createElement("div");
+        dl.className = "ui-datepicker-title";
+
+        const dn = document.createElement("button");
+        dn.type = "button";
+        dn.className = "ui-datepicker-nav-btn";
+        dn.setAttribute("aria-label", "Décennie suivante");
+        dn.innerHTML = "&#8250;";
+
+        ph.append(dp, dl, dn);
+
+        const pb = document.createElement("div");
+        pb.className = "ui-datepicker-picker-body";
+
+        const mg = document.createElement("div");
+        mg.className = "ui-datepicker-months-grid";
+
+        const divider = document.createElement("div");
+        divider.className = "ui-datepicker-picker-divider";
+
+        const yg = document.createElement("div");
+        yg.className = "ui-datepicker-years-grid";
+
+        pb.append(mg, divider, yg);
+
+        const bk = document.createElement("button");
+        bk.type = "button";
+        bk.className = "ui-datepicker-picker-back";
+        bk.textContent = "↩ Retour";
+
+        pv.append(ph, pb, bk);
+        panel.append(dv, pv);
         this.#wrapper.appendChild(panel);
+
+        // Références
         this.#panel = panel;
-        this.#titleEl = title;
+        this.#daysView = dv;
+        this.#titleBtn = titleBtn;
+        this.#prevBtn = prev;
+        this.#nextBtn = nxt;
         this.#gridEl = grid;
+        this.#pickerView = pv;
+        this.#decadeLabel = dl;
+        this.#monthsGrid = mg;
+        this.#yearsGrid = yg;
+        this.#pickerBackBtn = bk;
 
-        this.#on(prevBtn, "click", () => this.#navigate(-1));
-        this.#on(nextBtn, "click", () => this.#navigate(1));
-        this.#on(title, "click", () => this.#cycleView());
+        // ── Listeners stables ─────────────────────────────────────────────
+        this.#on(prev, "click", () => this.#changeMonth(-1));
+        this.#on(nxt, "click", () => this.#changeMonth(1));
+        this.#on(titleBtn, "click", () => this.#openPicker());
+        this.#on(dp, "click", () => this.#changeDecade(-10));
+        this.#on(dn, "click", () => this.#changeDecade(10));
+        this.#on(bk, "click", () => this.#showView("days"));
 
-        // ── Fermeture : clic extérieur + Escape ────────────────────────────
-        this.#on(document, "click", (e) => {
-            if (this.#isOpen && !this.#wrapper.contains(e.target)) this.close();
+        // ── Délégation — grille jours ─────────────────────────────────────
+        this.#on(grid, "click", (e) => {
+            const btn = e.target.closest(".ui-datepicker-day");
+            if (!btn || btn.disabled) return;
+            this.setDate(btn.dataset.date);
         });
+
+        // ── Délégation — grille mois ──────────────────────────────────────
+        // Clic mois → valide avec l'année déjà dans #viewDate → calendrier
+        this.#on(mg, "click", (e) => {
+            const btn = e.target.closest(".ui-datepicker-month-btn");
+            if (!btn || btn.disabled) return;
+            this.#viewDate = new Date(
+                this.#viewDate.getFullYear(),
+                parseInt(btn.dataset.month, 10),
+                1,
+            );
+            this.#showView("days");
+        });
+
+        // ── Délégation — grille années ────────────────────────────────────
+        // Clic année → met à jour l'année, reste sur picker
+        this.#on(yg, "click", (e) => {
+            const btn = e.target.closest(".ui-datepicker-year-btn");
+            if (!btn || btn.disabled) return;
+            this.#viewDate = new Date(
+                parseInt(btn.dataset.year, 10),
+                this.#viewDate.getMonth(),
+                1,
+            );
+            this.#renderPicker(); // reste sur picker, re-render surbrillance
+        });
+
+        // ── Fermeture : pointerdown EXTÉRIEUR au wrapper ──────────────────
+        // On utilise "pointerdown" (et non "click") pour intercepter AVANT
+        // que le click natif se propage aux boutons internes.
+        // L'ordre est : pointerdown extérieur → on ferme → click interne n'arrive plus sur un panneau ouvert
+        // Mais ici on veut l'inverse : les clics internes doivent d'abord être traités.
+        // Solution : on vérifie simplement que e.target n'est PAS dans le wrapper.
+        // En "pointerdown" le panneau n'est pas encore fermé → les listeners internes
+        // en "click" (phase bubble) s'exécutent normalement après.
+        this.#on(document, "pointerdown", (e) => {
+            if (this.#isOpen && !this.#wrapper.contains(e.target)) {
+                this.close();
+            }
+        });
+
         this.#on(document, "keydown", (e) => {
             if (e.key === "Escape" && this.#isOpen) {
                 this.close();
@@ -428,293 +498,210 @@ export class UIDatePicker {
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    //  RENDU
+    //  VUES
     // ══════════════════════════════════════════════════════════════════════
 
-    #cycleView() {
-        const next = { days: "months", months: "years", years: "years" };
-        this.#view = next[this.#view];
-        this.#renderCalendar();
+    #showView(view) {
+        this.#view = view;
+        const isDays = view === "days";
+        this.#daysView.hidden = !isDays;
+        this.#pickerView.hidden = isDays;
+        const arrow = this.#titleBtn.querySelector(
+            ".ui-datepicker-title-arrow",
+        );
+        if (arrow) arrow.style.transform = isDays ? "" : "rotate(180deg)";
+        if (isDays) this.#renderDays();
+        else this.#renderPicker();
     }
 
-    #navigate(delta) {
-        if (this.#view === "years") {
-            this.#viewDate = new Date(
-                this.#viewDate.getFullYear() + delta * 12,
-                this.#viewDate.getMonth(),
-                1,
-            );
-        } else if (this.#view === "months") {
-            this.#viewDate = new Date(
-                this.#viewDate.getFullYear() + delta,
-                this.#viewDate.getMonth(),
-                1,
-            );
-        } else {
-            this.#viewDate = new Date(
-                this.#viewDate.getFullYear(),
-                this.#viewDate.getMonth() + delta,
-                1,
-            );
-        }
-        this.#renderCalendar();
+    #openPicker() {
+        this.#decadeStart = Math.floor(this.#viewDate.getFullYear() / 10) * 10;
+        this.#showView("picker");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  RENDU — JOURS
+    // ══════════════════════════════════════════════════════════════════════
+
+    #changeMonth(delta) {
+        this.#viewDate = new Date(
+            this.#viewDate.getFullYear(),
+            this.#viewDate.getMonth() + delta,
+            1,
+        );
+        this.#renderDays();
     }
 
     #renderDisplay() {
-        const valueEl = this.#displayBtn.querySelector(".ui-datepicker-value");
+        const v = this.#displayBtn.querySelector(".ui-datepicker-value");
         if (this.#selectedDate) {
-            valueEl.textContent = this.#formatDate(this.#selectedDate);
-            valueEl.classList.remove("ui-datepicker-placeholder");
+            v.textContent = this.#fmt(this.#selectedDate);
+            v.classList.remove("ui-datepicker-placeholder");
         } else {
-            valueEl.textContent = this.#options.placeholder;
-            valueEl.classList.add("ui-datepicker-placeholder");
-        }
-    }
-
-    #renderCalendar() {
-        switch (this.#view) {
-            case "months":
-                this.#renderMonths();
-                break;
-            case "years":
-                this.#renderYears();
-                break;
-            default:
-                this.#renderDays();
+            v.textContent = this.#options.placeholder;
+            v.classList.add("ui-datepicker-placeholder");
         }
     }
 
     #renderDays() {
-        const fmt = new Intl.DateTimeFormat(this.#options.locale, {
-            month: "long",
-            year: "numeric",
-        });
-        this.#titleEl.textContent = fmt.format(this.#viewDate);
-
-        // En-têtes des jours de semaine
-        const weekdayFmt = new Intl.DateTimeFormat(this.#options.locale, {
-            weekday: "short",
-        });
-        const weekdayNames = [];
-        for (let i = 0; i < 7; i++) {
-            const dow = (this.#options.firstDayOfWeek + i) % 7;
-            // 1er janvier 2023 = dimanche → référence stable pour les noms de jours
-            const ref = new Date(2023, 0, 1 + dow);
-            weekdayNames.push(weekdayFmt.format(ref));
+        const tt = this.#titleBtn.querySelector(".ui-datepicker-title-text");
+        if (tt) {
+            tt.textContent = new Intl.DateTimeFormat(this.#options.locale, {
+                month: "long",
+                year: "numeric",
+            }).format(this.#viewDate);
         }
 
-        // Grille des jours (6 semaines x 7 jours)
-        const year = this.#viewDate.getFullYear();
-        const month = this.#viewDate.getMonth();
-        const firstOfMonth = new Date(year, month, 1);
-        const offset =
-            (firstOfMonth.getDay() - this.#options.firstDayOfWeek + 7) % 7;
-        const start = new Date(year, month, 1 - offset);
+        const wf = new Intl.DateTimeFormat(this.#options.locale, {
+            weekday: "short",
+        });
+        const wn = [];
+        for (let i = 0; i < 7; i++) {
+            const dow = (this.#options.firstDayOfWeek + i) % 7;
+            wn.push(wf.format(new Date(2023, 0, 1 + dow)));
+        }
 
-        const today = this.#toISO(new Date());
+        const yr = this.#viewDate.getFullYear();
+        const mo = this.#viewDate.getMonth();
+        const fom = new Date(yr, mo, 1);
+        const off = (fom.getDay() - this.#options.firstDayOfWeek + 7) % 7;
+        const st = new Date(yr, mo, 1 - off);
+        const tod = this.#iso(new Date());
 
-        let html = "";
-        weekdayNames.forEach((name) => {
-            html += `<div class="ui-datepicker-weekday">${name}</div>`;
+        let h = "";
+        wn.forEach((n) => {
+            h += `<div class="ui-datepicker-weekday">${n}</div>`;
         });
 
         for (let i = 0; i < 42; i++) {
-            const d = new Date(start);
-            d.setDate(start.getDate() + i);
-
-            const iso = this.#toISO(d);
-            const classes = ["ui-datepicker-day"];
-            if (d.getMonth() !== month) classes.push("is-outside");
-            if (iso === today) classes.push("is-today");
-            if (this.#selectedDate && iso === this.#toISO(this.#selectedDate)) {
-                classes.push("is-selected");
-            }
-
-            const disabled = this.#isDisabled(d);
-            if (disabled) classes.push("is-disabled");
-
-            html += `<button type="button" class="${classes.join(" ")}" data-date="${iso}"${
-                disabled ? " disabled" : ""
-            } aria-label="${d.toLocaleDateString(this.#options.locale, {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-            })}">${d.getDate()}</button>`;
+            const d = new Date(st);
+            d.setDate(st.getDate() + i);
+            const iso = this.#iso(d);
+            const cl = ["ui-datepicker-day"];
+            if (d.getMonth() !== mo) cl.push("is-outside");
+            if (iso === tod) cl.push("is-today");
+            if (this.#selectedDate && iso === this.#iso(this.#selectedDate))
+                cl.push("is-selected");
+            const dis = this.#isDisabledDate(d);
+            if (dis) cl.push("is-disabled");
+            h += `<button type="button" class="${cl.join(" ")}" data-date="${iso}"${dis ? " disabled" : ""}
+                aria-label="${d.toLocaleDateString(this.#options.locale, {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                })}"
+                >${d.getDate()}</button>`;
         }
-
-        this.#gridEl.className = "ui-datepicker-grid";
-        this.#gridEl.innerHTML = html;
-
-        this.#gridEl
-            .querySelectorAll(".ui-datepicker-day:not(.is-disabled)")
-            .forEach((dayBtn) => {
-                this.#on(dayBtn, "click", () =>
-                    this.setDate(dayBtn.dataset.date),
-                );
-            });
+        this.#gridEl.innerHTML = h;
     }
 
-    /** Vue "mois" — grille des 12 mois de l'année affichée. */
-    #renderMonths() {
-        const year = this.#viewDate.getFullYear();
-        this.#titleEl.textContent = String(year);
+    // ══════════════════════════════════════════════════════════════════════
+    //  RENDU — PICKER (mois + années)
+    // ══════════════════════════════════════════════════════════════════════
 
-        const monthFmt = new Intl.DateTimeFormat(this.#options.locale, {
+    #changeDecade(delta) {
+        this.#decadeStart += delta;
+        this.#renderPicker();
+    }
+
+    #renderPicker() {
+        const cy = this.#viewDate.getFullYear();
+        const cm = this.#viewDate.getMonth();
+        const s = this.#decadeStart;
+        const e = s + 11;
+
+        this.#decadeLabel.textContent = `${s} – ${e}`;
+
+        // Grille des mois — toujours calculés avec l'année DÉJÀ dans #viewDate
+        const mf = new Intl.DateTimeFormat(this.#options.locale, {
             month: "short",
         });
-        const today = new Date();
-        const selectedMonth =
-            this.#selectedDate && this.#selectedDate.getFullYear() === year
-                ? this.#selectedDate.getMonth()
-                : null;
-
-        let html = "";
+        let mh = "";
         for (let m = 0; m < 12; m++) {
-            const ref = new Date(year, m, 1);
-            const classes = ["ui-datepicker-cell"];
-            if (m === selectedMonth) classes.push("is-selected");
-            if (m === today.getMonth() && year === today.getFullYear())
-                classes.push("is-today");
-
-            const disabled = this.#isMonthDisabled(year, m);
-            if (disabled) classes.push("is-disabled");
-
-            html += `<button type="button" class="${classes.join(" ")}" data-month="${m}"${
-                disabled ? " disabled" : ""
-            }>${monthFmt.format(ref)}</button>`;
+            const dis = this.#isMonthDisabled(cy, m);
+            mh += `<button type="button"
+                class="ui-datepicker-month-btn${m === cm ? " is-selected" : ""}${dis ? " is-disabled" : ""}"
+                data-month="${m}" ${dis ? "disabled" : ""} aria-pressed="${m === cm}">
+                ${mf.format(new Date(2024, m, 1))}</button>`;
         }
+        this.#monthsGrid.innerHTML = mh;
 
-        this.#gridEl.className =
-            "ui-datepicker-grid ui-datepicker-grid--months";
-        this.#gridEl.innerHTML = html;
-
-        this.#gridEl
-            .querySelectorAll(".ui-datepicker-cell:not(.is-disabled)")
-            .forEach((btn) => {
-                this.#on(btn, "click", () => {
-                    this.#viewDate = new Date(
-                        year,
-                        Number(btn.dataset.month),
-                        1,
-                    );
-                    this.#view = "days";
-                    this.#renderCalendar();
-                });
-            });
-    }
-
-    /** Vue "années" — grille de 12 années (par blocs de 12). */
-    #renderYears() {
-        const year = this.#viewDate.getFullYear();
-        const start = year - (year % 12);
-        const end = start + 11;
-        this.#titleEl.textContent = `${start} – ${end}`;
-
-        const todayYear = new Date().getFullYear();
-        const selectedYear = this.#selectedDate
-            ? this.#selectedDate.getFullYear()
-            : null;
-
-        let html = "";
-        for (let y = start; y <= end; y++) {
-            const classes = ["ui-datepicker-cell"];
-            if (y === selectedYear) classes.push("is-selected");
-            if (y === todayYear) classes.push("is-today");
-
-            const disabled = this.#isYearDisabled(y);
-            if (disabled) classes.push("is-disabled");
-
-            html += `<button type="button" class="${classes.join(" ")}" data-year="${y}"${
-                disabled ? " disabled" : ""
-            }>${y}</button>`;
+        // Grille des années
+        let yh = "";
+        for (let y = s; y <= e; y++) {
+            const dis = this.#isYearDisabled(y);
+            yh += `<button type="button"
+                class="ui-datepicker-year-btn${y === cy ? " is-selected" : ""}${dis ? " is-disabled" : ""}"
+                data-year="${y}" ${dis ? "disabled" : ""} aria-pressed="${y === cy}">
+                ${y}</button>`;
         }
-
-        this.#gridEl.className = "ui-datepicker-grid ui-datepicker-grid--years";
-        this.#gridEl.innerHTML = html;
-
-        this.#gridEl
-            .querySelectorAll(".ui-datepicker-cell:not(.is-disabled)")
-            .forEach((btn) => {
-                this.#on(btn, "click", () => {
-                    this.#viewDate = new Date(
-                        Number(btn.dataset.year),
-                        this.#viewDate.getMonth(),
-                        1,
-                    );
-                    this.#view = "months";
-                    this.#renderCalendar();
-                });
-            });
+        this.#yearsGrid.innerHTML = yh;
     }
 
     // ══════════════════════════════════════════════════════════════════════
-    //  UTILITAIRES PRIVÉS
+    //  UTILITAIRES
     // ══════════════════════════════════════════════════════════════════════
 
-    #isDisabled(date) {
-        if (this.#minDate && date < this.#minDate) return true;
-        if (this.#maxDate && date > this.#maxDate) return true;
-        return false;
+    #isDisabledDate(d) {
+        return (
+            (this.#minDate && d < this.#minDate) ||
+            (this.#maxDate && d > this.#maxDate)
+        );
+    }
+    #isMonthDisabled(y, m) {
+        const f = new Date(y, m, 1),
+            l = new Date(y, m + 1, 0);
+        return (
+            (this.#minDate && l < this.#minDate) ||
+            (this.#maxDate && f > this.#maxDate)
+        );
+    }
+    #isYearDisabled(y) {
+        return (
+            (this.#minDate && y < this.#minDate.getFullYear()) ||
+            (this.#maxDate && y > this.#maxDate.getFullYear())
+        );
     }
 
-    #toISO(date) {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, "0");
-        const d = String(date.getDate()).padStart(2, "0");
-        return `${y}-${m}-${d}`;
+    #iso(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${dd}`;
     }
-
-    #parseISO(value) {
-        if (!value) return null;
-        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-        if (!match) return null;
-        const [, y, m, d] = match.map(Number);
-        const date = new Date(y, m - 1, d);
-        return Number.isNaN(date.getTime()) ? null : date;
+    #parseISO(v) {
+        if (!v) return null;
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+        if (!m) return null;
+        const [, y, mo, d] = m.map(Number);
+        const dt = new Date(y, mo - 1, d);
+        return Number.isNaN(dt.getTime()) ? null : dt;
     }
-
-    #parseDate(value) {
-        if (!value) return null;
-        if (value instanceof Date) return value;
-        return this.#parseISO(value);
+    #pd(v) {
+        if (!v) return null;
+        if (v instanceof Date) return v;
+        return this.#parseISO(v);
     }
-
-    #formatDate(date) {
-        const format = this.#options.format;
-
-        // Patron à jetons type "dd/mm/yyyy"
-        if (/^[dmy/\-. ]+$/i.test(format)) {
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, "0");
-            const d = String(date.getDate()).padStart(2, "0");
-            return format
-                .replace(/yyyy/g, y)
-                .replace(/mm/g, m)
-                .replace(/dd/g, d);
+    #fmt(d) {
+        const f = this.#options.format;
+        if (/^[dmy/\-. ]+$/i.test(f)) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            return f.replace(/yyyy/g, y).replace(/mm/g, m).replace(/dd/g, dd);
         }
-
-        // Sinon : style Intl ("long", "medium", "short", "full")
         return new Intl.DateTimeFormat(this.#options.locale, {
-            dateStyle: format,
-        }).format(date);
+            dateStyle: f,
+        }).format(d);
     }
 
-    /**
-     * Enregistre un listener pour pouvoir le retirer dans destroy().
-     * Identique à Modal#on.
-     */
     #on(target, event, handler) {
         target.addEventListener(event, handler);
         if (!this.#listeners.has(target)) this.#listeners.set(target, []);
         this.#listeners.get(target).push({ event, handler });
     }
-
-    /**
-     * Émet un CustomEvent("datepicker:*") sur le conteneur racine.
-     * Retourne false si preventDefault() a été appelé (annulation).
-     */
     #emit(eventName, detail = {}) {
-        const event = new CustomEvent(eventName, {
+        const ev = new CustomEvent(eventName, {
             bubbles: true,
             cancelable: true,
             detail: {
@@ -725,6 +712,6 @@ export class UIDatePicker {
                 ...detail,
             },
         });
-        return this.#wrapper.dispatchEvent(event);
+        return this.#wrapper.dispatchEvent(ev);
     }
 }

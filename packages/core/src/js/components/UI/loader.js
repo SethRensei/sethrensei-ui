@@ -1,8 +1,16 @@
+import { AnimationObserver } from "../Classic/animations";
+
 export class UILoader {
     // Registre des spinners disponibles : la clé correspond à data-loader="..."
     // et à la classe CSS .loader-<clé> déjà définie dans le design system.
     static SPINNERS = {
+        "circle-1": `<div class="loader-circle-1"></div>`,
         "circle-2": `<div class="loader-circle-2"></div>`,
+        "circle-9": `
+            <div class="loader-circle-9">Loading
+                <span></span>
+            </div>
+        `,
         "circle-11": `
             <div class="loader-circle-11">
                 <div class="arc"></div>
@@ -53,7 +61,7 @@ export class UILoader {
         this.overlay.innerHTML = markup;
     }
 
-    hide(reason = "ok") {
+    async hide(reason = "ok") {
         if (this.hidden || !this.overlay) return;
         this.hidden = true;
         clearTimeout(this.failsafeTimer);
@@ -61,25 +69,18 @@ export class UILoader {
         const elapsed = Date.now() - this.startedAt;
         const wait = Math.max(0, this.minDuration - elapsed);
 
-        setTimeout(() => {
-            const remove = () => this.overlay?.remove();
+        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 
-            this.overlay.classList.add("ui-loader-hide");
-            this.overlay.addEventListener("transitionend", remove, {
-                once: true,
-            });
+        if (reason !== "ok")
+            console.warn(`[UILoader] fermé via fallback : "${reason}"`);
+        document.dispatchEvent(
+            new CustomEvent("ui:loader-hidden", { detail: { reason } }),
+        );
 
-            // Filet de sécurité si la transition ne se déclenche jamais
-            // (ex: prefers-reduced-motion, ou pas de transition CSS définie).
-            setTimeout(remove, 400);
-
-            if (reason !== "ok") {
-                console.warn(`[UILoader] masqué via fallback : "${reason}"`);
-            }
-            document.dispatchEvent(
-                new CustomEvent("ui:loader-hidden", { detail: { reason } }),
-            );
-        }, wait);
+        // console.log("[UILoader] lecture de l'animation de fermeture…");
+        await AnimationObserver.close(this.overlay); // ← LA vraie animation
+        // console.log("[UILoader] animation terminée, suppression du DOM");
+        this.overlay.remove();
     }
 }
 

@@ -66,28 +66,28 @@
     }
 }
 
-@keyframes modal-fade-out-down {
+@keyframes ui-fade-out-down {
     to {
         opacity: 0;
         transform: translateY(20px)
     }
 }
 
-@keyframes modal-fade-out-up {
+@keyframes ui-fade-out-up {
     to {
         opacity: 0;
         transform: translateY(-20px)
     }
 }
 
-@keyframes modal-fade-out-left {
+@keyframes ui-fade-out-left {
     to {
         opacity: 0;
         transform: translateX(-20px)
     }
 }
 
-@keyframes modal-fade-out-right {
+@keyframes ui-fade-out-right {
     to {
         opacity: 0;
         transform: translateX(20px)

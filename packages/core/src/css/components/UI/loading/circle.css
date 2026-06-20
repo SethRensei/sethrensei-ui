@@ -1,0 +1,262 @@
+@layer components {
+
+    /* CIRCLE - 1 */
+    .loader-circle-1 {
+        position: relative;
+        display: block;
+        height: 70px;
+        width: 70px;
+        border-radius: 50%;
+        background-color: var(--color-primary-500);
+    }
+
+    .loader-circle-1:after,
+    .loader-circle-1:before {
+        content: "";
+        border-radius: 50%;
+    }
+
+    .loader-circle-1::before {
+        position: absolute;
+        border: 35px solid transparent;
+        border-top-color: var(--color-teal-600);
+        top: 0;
+        left: 0;
+        animation: loader-circle-1-spin 2s linear infinite;
+    }
+
+    .loader-circle-1::after {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        height: 30px;
+        width: 30px;
+        background-color: var(--color-destructive-600);
+    }
+
+    @keyframes loader-circle-1-spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* CIRCLE - 2 */
+    .loader-circle-2 {
+        position: relative;
+        width: 70px;
+        height: 70px;
+        display: inline-block;
+
+    }
+
+    .loader-circle-2:before,
+    .loader-circle-2:after {
+        content: "";
+        display: block;
+        position: absolute;
+        border-width: 5px;
+        border-style: solid;
+        border-radius: 50%;
+    }
+
+    .loader-circle-2:before {
+        width: 70px;
+        height: 70px;
+        border-bottom-color: var(--color-primary-300);
+        border-right-color: var(--color-primary-500);
+        border-top-color: transparent;
+        border-left-color: transparent;
+        animation: loader-circle-2-animation-2 1s linear infinite;
+    }
+
+    .loader-circle-2:after {
+        width: 40px;
+        height: 40px;
+        border-bottom-color: var(--color-destructive-400);
+        border-right-color: var(--color-destructive-500);
+        border-top-color: transparent;
+        border-left-color: transparent;
+        top: 22%;
+        left: 22%;
+        animation: loader-circle-2-animation 0.85s linear infinite;
+    }
+
+    @keyframes loader-circle-2-animation {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(-360deg);
+        }
+    }
+
+    @keyframes loader-circle-2-animation-2 {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+
+    }
+
+    /* CIRCLE - 9 */
+    .loader-circle-9 {
+        --lborder-w-9: 3px;
+        --lsize-9: 70px;
+
+        position: relative;
+        width: var(--lsize-9);
+        height: var(--lsize-9);
+        background: transparent;
+        border: var(--lborder-w-9) solid #3c3c3c;
+        border-radius: 50%;
+        text-align: center;
+        line-height: calc(var(--lsize-9) - (var(--lborder-w-9) * 2));
+        font-family: sans-serif;
+        font-size: 12px;
+        color: var(--color-primary-500);
+        text-transform: uppercase;
+        box-shadow: 0 0 20px rgba(0, 0, 0, .5);
+        box-sizing: border-box;
+    }
+
+    .loader-circle-9:before {
+        content: '';
+        position: absolute;
+        top: calc(-1 * var(--lborder-w-9));
+        left: calc(-1 * var(--lborder-w-9));
+        width: var(--lsize-9);
+        height: var(--lsize-9);
+        border: var(--lborder-w-9) solid transparent;
+        border-top: var(--lborder-w-9) solid var(--color-primary-500);
+        border-right: var(--lborder-w-9) solid var(--color-primary-500);
+        border-radius: 50%;
+        animation: loader-circle-9-animation 2s linear infinite;
+        box-sizing: border-box;
+    }
+
+    .loader-circle-9 span {
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 50%;
+        height: 0;
+        background: transparent;
+        transform-origin: left;
+        animation: loader-circle-9-animation-2 2s linear infinite;
+    }
+
+    .loader-circle-9 span:before {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--color-primary-500);
+        top: -6px;
+        right: -8px;
+        box-shadow: 0 0 20px var(--color-primary-500);
+    }
+
+    @keyframes loader-circle-9-animation {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes loader-circle-9-animation-2 {
+        0% {
+            transform: rotate(45deg);
+        }
+
+        100% {
+            transform: rotate(405deg);
+        }
+    }
+
+    /* CIRCLE - 11 */
+    .loader-circle-11 {
+        position: relative;
+        width: 70px;
+        height: 70px;
+        transform-style: preserve-3d;
+        perspective: 400px;
+    }
+
+    .loader-circle-11 .arc {
+        position: absolute;
+        content: "";
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border-bottom: 5px solid var(--color-primary-500);
+    }
+
+    .loader-circle-11 .arc:nth-child(1) {
+        animation: loader-circle-11-animation 1.15s linear infinite;
+    }
+
+    .loader-circle-11 .arc:nth-child(2) {
+        animation: loader-circle-11-animation-2 1.15s linear infinite;
+    }
+
+    .loader-circle-11 .arc:nth-child(3) {
+        animation: loader-circle-11-animation-3 1.15s linear infinite;
+    }
+
+    .loading .arc:nth-child(1) {
+        animation-delay: -0.8s;
+    }
+
+    .loader-circle-11 .arc:nth-child(2) {
+        animation-delay: -0.4s;
+    }
+
+    .loader-circle-11 .arc:nth-child(3) {
+        animation-delay: 0s;
+    }
+
+    @keyframes loader-circle-11-animation {
+        from {
+            transform: rotateX(35deg) rotateY(-45deg) rotateZ(0);
+        }
+
+        to {
+            transform: rotateX(35deg) rotateY(-45deg) rotateZ(1turn);
+        }
+    }
+
+    @keyframes loader-circle-11-animation-2 {
+        from {
+            transform: rotateX(50deg) rotateY(10deg) rotateZ(0);
+        }
+
+        to {
+            transform: rotateX(50deg) rotateY(10deg) rotateZ(1turn);
+        }
+    }
+
+    @keyframes loader-circle-11-animation-3 {
+        from {
+            transform: rotateX(35deg) rotateY(55deg) rotateZ(0);
+        }
+
+        to {
+            transform: rotateX(35deg) rotateY(55deg) rotateZ(1turn);
+        }
+    }
+}

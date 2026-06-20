@@ -46,28 +46,28 @@
     }
 }
 
-@keyframes modal-slide-out-down {
+@keyframes ui-slide-out-down {
     to {
         opacity: 0;
         transform: translateY(100%)
     }
 }
 
-@keyframes modal-slide-out-up {
+@keyframes ui-slide-out-up {
     to {
         opacity: 0;
         transform: translateY(-100%)
     }
 }
 
-@keyframes modal-slide-out-left {
+@keyframes ui-slide-out-left {
     to {
         opacity: 0;
         transform: translateX(-100%)
     }
 }
 
-@keyframes modal-slide-out-right {
+@keyframes ui-slide-out-right {
     to {
         opacity: 0;
         transform: translateX(100%)
