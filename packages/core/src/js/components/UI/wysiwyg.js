@@ -45,7 +45,7 @@ export class UIEditor {
         "ul ul": "ui-editor-content ul ul",
         "ul ul ul": "ui-editor-content ul ul ul",
         "ol ol": "ui-editor-content ol ol",
-        "ol ol ol": "ui-editor-content ol ol ol"
+        "ol ol ol": "ui-editor-content ol ol ol",
     };
 
     static COMMANDS = {
@@ -105,11 +105,29 @@ export class UIEditor {
     };
 
     static DEFAULTS = {
-        toolbar: [ "p", "h1", "h2", "h3", "h4", "h5",
-            "|", "bold", "italic", "underline", "strike",
-            "|", "quote", "ul", "ol",
-            "|", "link", "unlink",
-            "|", "undo", "redo", "clear",
+        toolbar: [
+            "p",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "|",
+            "bold",
+            "italic",
+            "underline",
+            "strike",
+            "|",
+            "quote",
+            "ul",
+            "ol",
+            "|",
+            "link",
+            "unlink",
+            "|",
+            "undo",
+            "redo",
+            "clear",
         ],
         placeholder: "Écrivez ici…",
         minHeight: "10rem",
@@ -137,7 +155,12 @@ export class UIEditor {
             );
 
         this.#source = element;
-        this.#options = { ...UIEditor.DEFAULTS, ...options };
+        const dataPlaceholder = element.dataset.placeholder ?? null;
+        this.#options = {
+            ...UIEditor.DEFAULTS,
+            ...(dataPlaceholder ? { placeholder: dataPlaceholder } : {}),
+            ...options,
+        };
 
         this.#build();
         this.#bindEvents();
@@ -213,8 +236,22 @@ export class UIEditor {
         const clone = this.#content.cloneNode(true);
 
         // Sélecteurs simples (balise directe)
-        const simpleTags = [ "h1", "h2", "h3", "h4", "h5", "p",
-            "blockquote", "ul", "ol", "li", "strong", "em", "u", "s", "a"
+        const simpleTags = [
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "p",
+            "blockquote",
+            "ul",
+            "ol",
+            "li",
+            "strong",
+            "em",
+            "u",
+            "s",
+            "a",
         ];
         simpleTags.forEach((tag) => {
             const classes = map[tag];
@@ -225,7 +262,14 @@ export class UIEditor {
         });
 
         // Sélecteurs imbriqués (ul ul, ol ol, etc.)
-        const nestedSelectors = ["ul ul", "ul ul ul", "ol ol", "ol ol ol", "ul ol", "ol ul"];
+        const nestedSelectors = [
+            "ul ul",
+            "ul ul ul",
+            "ol ol",
+            "ol ol ol",
+            "ul ol",
+            "ol ul",
+        ];
         nestedSelectors.forEach((sel) => {
             const classes = map[sel] ?? map[sel.split(" ")[1]]; // fallback sur le tag
             if (!classes) return;
@@ -541,7 +585,32 @@ export class UIEditor {
             });
     }
 
+    /**
+     * Nettoie le contenu "vide" que le navigateur insère dans contenteditable.
+     * Quand l'utilisateur supprime tout, certains navigateurs laissent un <br>
+     * ou un <div><br></div> au lieu d'un vrai vide. On normalise :
+     *   - si le texte est vide et le HTML ne contient que des <br>/espaces → innerHTML = ""
+     *   - on replace dans le DOM pour que :empty::before (placeholder CSS) fonctionne
+     */
+    #normalizeEmpty() {
+        const text = this.#content.textContent ?? "";
+        if (text.trim() !== "") return; // il y a du contenu réel → rien à faire
+
+        const html = this.#content.innerHTML;
+        // Regex : uniquement <br>, &nbsp;, espaces, divs vides
+        if (
+            /^(\s|<br\s*\/?>|<div>\s*<br\s*\/?>\s*<\/div>|<p>\s*<br\s*\/?>\s*<\/p>)*$/i.test(
+                html.trim(),
+            )
+        ) {
+            // Vider sans déclencher de re-sync (on est déjà dans #sync)
+            this.#content.innerHTML = "";
+        }
+    }
+
     #sync(silent = false) {
+        // Nettoie le <br> fantôme avant de lire le contenu
+        this.#normalizeEmpty();
         const html = this.getContent();
         this.#source.value = html;
         this.#source.dispatchEvent(new Event("input", { bubbles: true }));

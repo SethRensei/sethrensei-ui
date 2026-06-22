@@ -3,7 +3,6 @@
         position: relative;
         display: inline-block;
         width: 100%;
-        max-width: 16rem;
     }
 
     /* Input natif type="date" — conservé dans le DOM pour le formulaire,
