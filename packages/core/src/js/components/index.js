@@ -226,6 +226,68 @@ document.addEventListener("turbo:before-frame-render", (event) => {
         .finally(() => event.detail.resume());
 });
 
+// ─────────────────────────────────────────────────────────────
+// Turbo Streams : toutes les actions (append, prepend, replace,
+// update, before, after) — init sur le(s) nœud(s) injectés
+// ─────────────────────────────────────────────────────────────
+document.addEventListener("turbo:before-stream-render", (event) => {
+    const originalRender = event.detail.render;
+
+    event.detail.render = async (streamElement) => {
+        // 1. Laisser Turbo appliquer la mutation DOM
+        await originalRender(streamElement);
+
+        // 2. Récupérer le(s) nœud(s) réellement insérés/modifiés
+        const action   = streamElement.getAttribute("action");
+        const targetId = streamElement.getAttribute("target");
+        const target   = targetId ? document.getElementById(targetId) : null;
+
+        if (!target) return;
+
+        try {
+            switch (action) {
+                case "append":
+                case "prepend": {
+                    // Les nouveaux enfants sont les N derniers (append)
+                    // ou les N premiers (prepend) fils du target.
+                    // On initialise directement le target : initXxx()
+                    // utilise [data-ui-init] pour ne pas ré-initialiser
+                    // ce qui l'est déjà.
+                    uiKit.init(target);
+                    break;
+                }
+
+                // --- Contenu inséré AUTOUR du target ---
+                case "before":
+                case "after": {
+                    // Les nouveaux nœuds sont des siblings du target.
+                    // On remonte au parent pour les couvrir.
+                    if (target.parentElement) {
+                        uiKit.init(target.parentElement);
+                    }
+                    break;
+                }
+
+                // --- Le target lui-même est remplacé ou son inner mis à jour ---
+                case "replace":
+                case "update": {
+                    // Après replace, target n'existe plus dans le DOM ;
+                    // on cherche l'élément qui a pris sa place (même id).
+                    const fresh = document.getElementById(targetId);
+                    if (fresh) uiKit.init(fresh);
+                    break;
+                }
+
+                // --- remove / refresh : rien à initialiser ---
+                default:
+                    break;
+            }
+        } catch (err) {
+            console.error(`[UIKit] erreur (turbo:before-stream-render / ${action}) :`, err);
+        }
+    };
+});
+
 // Nettoyage avant mise en cache
 document.addEventListener("turbo:before-cache", () => uiKit.destroy(document));
 

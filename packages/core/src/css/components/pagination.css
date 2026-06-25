@@ -15,7 +15,7 @@
         height: 20px;
         width: 20px;
         fill: currentColor;
-        object-fit: contain;
+        object-fit: cover;
     }
 
     .pagination-dots {
@@ -23,6 +23,8 @@
         color: var(--color-black);
         padding: 0 2px;
         line-height: 30px;
+        user-select: none;
+        --webkit-user-select: none;
     }
 
     .pagination-bar, .pagination-card,
@@ -35,8 +37,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 2.5rem;
-        min-width: 2.5rem;
+        height: 1.6rem;
+        min-width: 1.6rem;
         padding-left: 0.625rem;
         padding-right: 0.625rem;
         font-size: 1rem;
@@ -72,16 +74,18 @@
         text-decoration: none;
         transition: all 0.2s ease-in-out;
         user-select: none;
+        --webkit-user-select: none;
 
         color: var(--color-gray-700);
         margin-left: 3px;
         border: 1px solid var(--color-primary-500);
         margin-right: 3px;
         margin-bottom: 0.375rem;
-        width: 2.5rem;
-        height: 2.5rem;
+        width: 1.6rem;
+        height: 1.6rem;
         border-radius: 9999px;
         padding: 0;
+        font-size: 13px;
     }
 
     .pagination-circle:hover,
@@ -97,8 +101,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 2.5rem;
-        min-width: 2.5rem;
+        height: 1.6rem;
+        min-width: 1.6rem;
         padding: 0 0.625rem;
         font-size: 1rem;
         text-decoration: none;

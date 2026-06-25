@@ -182,6 +182,11 @@
         border: 0.5px solid var(--border-color);
     }
 
+    .dt-pagination-icon {
+        height: 18px;
+        width: 18px;
+    }
+
     /* Export dropdown */
     .dt-export-wrap {
         position: relative;

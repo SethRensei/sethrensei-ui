@@ -612,11 +612,12 @@ export class UIEditor {
         // Nettoie le <br> fantôme avant de lire le contenu
         this.#normalizeEmpty();
         const html = this.getContent();
-        this.#source.value = html;
+        const styled = this.getStyledContent();
+        this.#source.value = styled;
         this.#source.dispatchEvent(new Event("input", { bubbles: true }));
         this.#source.dispatchEvent(new Event("change", { bubbles: true }));
         if (!silent) {
-            this.#emit(UIEditor.EVENTS.CHANGE, { html });
+            this.#emit(UIEditor.EVENTS.CHANGE, { html, styled });
             this.#options.onChange?.call(this, html, this);
         }
     }
