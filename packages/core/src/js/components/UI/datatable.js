@@ -236,11 +236,27 @@ function exportPDF(headers, rows, title) {
       td    { padding:4px 7px; border:0.5px solid #ddd; font-size:10px; }
       tr:nth-child(even) td { background:#f9f9f8; }
     </style></head><body>
-    <h2>${esc(title)}</h2>
     <table><thead>${thead}</thead><tbody>${tbody}</tbody></table>
     <script>window.onload=()=>{window.print();window.close();}<\/script>
     </body></html>`);
     win.document.close();
+}
+
+function parseNumber(str) {
+    if (!str) return null;
+    let s = String(str).trim().replace(/[€$£\s]/g, "");
+    if (/^-?\d{1,3}(\.\d{3})*,\d+$/.test(s)) {
+        // format FR avec milliers : "1.234,56"
+        s = s.replace(/\./g, "").replace(",", ".");
+    } else if (/^-?\d+,\d+$/.test(s)) {
+        // format FR simple : "12,50"
+        s = s.replace(",", ".");
+    } else if (/^-?\d{1,3}(,\d{3})*(\.\d+)?$/.test(s)) {
+        // format US avec milliers : "1,234.56"
+        s = s.replace(/,/g, "");
+    }
+    const n = Number(s);
+    return isNaN(n) ? null : n;
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -418,7 +434,7 @@ export class UIDataTable {
                 this._render();
             },
         });
-        [5, 10, 25, 50, 100].forEach((n) => {
+        [5, 10, 15, 25, 50, 100].forEach((n) => {
             const o = el("option");
             o.value = n;
             o.textContent = n;
@@ -483,6 +499,7 @@ export class UIDataTable {
                         type: "button",
                         role: "menuitem",
                         onclick: () => {
+                            this.export(fmt, scope.key);
                             this._closeExportMenu();
                         },
                     });
@@ -695,24 +712,64 @@ export class UIDataTable {
             (c) => c.label === this._state.sortCol,
         );
         if (ci < 0) return indices;
+        const dir = this._state.sortDir === "asc" ? 1 : -1;
+
+        // Détermine UNE FOIS le type dominant de la colonne
+        // pour éviter de mélanger les stratégies de comparaison ligne par ligne
+        let dateCount = 0,
+            numCount = 0,
+            total = 0;
+        indices.forEach((i) => {
+            const v = (this._rawRows[i][ci] ?? "").trim();
+            if (!v) return;
+            total++;
+            if (parseDate(v)) dateCount++;
+            else if (parseNumber(v) !== null) numCount++;
+        });
+        const colType =
+            total === 0
+                ? "text"
+                : dateCount / total > 0.5
+                  ? "date"
+                  : numCount / total > 0.5
+                    ? "number"
+                    : "text";
+
         return [...indices].sort((a, b) => {
-            const va = this._rawRows[a][ci] ?? "";
-            const vb = this._rawRows[b][ci] ?? "";
-            const da = parseDate(va),
-                db = parseDate(vb);
+            const va = (this._rawRows[a][ci] ?? "").trim();
+            const vb = (this._rawRows[b][ci] ?? "").trim();
+
+            // Valeurs vides toujours en fin, quel que soit le sens du tri
+            if (va === "" && vb === "") return 0;
+            if (va === "") return 1;
+            if (vb === "") return -1;
+
             let cmp;
-            if (da && db) cmp = da - db;
-            else {
-                const na = parseFloat(va),
-                    nb = parseFloat(vb);
+            if (colType === "date") {
+                const da = parseDate(va),
+                    db = parseDate(vb);
                 cmp =
-                    !isNaN(na) && !isNaN(nb)
+                    da && db
+                        ? da - db
+                        : va.localeCompare(vb, undefined, {
+                              sensitivity: "base",
+                          });
+            } else if (colType === "number") {
+                const na = parseNumber(va),
+                    nb = parseNumber(vb);
+                cmp =
+                    na !== null && nb !== null
                         ? na - nb
                         : va.localeCompare(vb, undefined, {
                               sensitivity: "base",
                           });
+            } else {
+                cmp = va.localeCompare(vb, undefined, {
+                    sensitivity: "base",
+                    numeric: true, // tri naturel : "Item 2" avant "Item 10"
+                });
             }
-            return this._state.sortDir === "asc" ? cmp : -cmp;
+            return cmp * dir;
         });
     }
 
@@ -722,22 +779,31 @@ export class UIDataTable {
     }
 
     _renderRows(sorted, paged) {
+        const tbody = this.table.querySelector("tbody");
         const pagedSet = new Set(paged);
-        this._bodyRows.forEach((tr, i) => {
-            if (!sorted.includes(i)) {
-                tr.style.display = "none";
-                return;
-            }
+        const sortedSet = new Set(sorted);
+
+        sorted.forEach((i) => {
+            const tr = this._bodyRows[i];
+            tbody.appendChild(tr);
             tr.style.display = pagedSet.has(i) ? "" : "none";
         });
-        let emptyRow = this.table.querySelector(".dt-empty-row");
+
+        this._bodyRows.forEach((tr, i) => {
+            if (!sortedSet.has(i)) {
+                tbody.appendChild(tr);
+                tr.style.display = "none";
+            }
+        });
+
+        let emptyRow = tbody.querySelector(".dt-empty-row");
         if (paged.length === 0) {
             if (!emptyRow) {
                 emptyRow = el("tr", { cls: "dt-empty-row" });
                 const td = el("td", { colspan: this._columns.length });
                 td.innerHTML = `<div class="dt-empty">${Icons.emptyBox}<div>Aucun résultat</div></div>`;
                 emptyRow.appendChild(td);
-                this.table.querySelector("tbody").appendChild(emptyRow);
+                tbody.appendChild(emptyRow);
             }
             emptyRow.style.display = "";
         } else if (emptyRow) emptyRow.style.display = "none";
@@ -988,9 +1054,73 @@ export class UIDataTable {
         this._exportToggleBtn?.setAttribute("aria-expanded", "false");
     }
 
+    /* ── EXPORT DATA ──
+     scope : 'all' | 'filtered' | 'page'
+  ── */
+    _getExportData(scope = "filtered") {
+        const allIndices = this._rawRows.map((_, i) => i);
+        const filteredIndices = this._applyFilters();
+        const sortedIndices = this._applySort(filteredIndices);
+        const pagedIndices = this._applyPagination(sortedIndices);
+
+        let rowIndices;
+        if (scope === "all") rowIndices = allIndices;
+        else if (scope === "page") rowIndices = pagedIndices;
+        else rowIndices = sortedIndices; // 'filtered' default
+
+        const exportCols = this._columns.filter((c) => !c.noExport);
+        const headers = exportCols.map((c) => c.label);
+        const data = rowIndices.map((idx) =>
+            exportCols.map((c) => this._rawRows[idx]?.[c.index] ?? ""),
+        );
+        return { headers, data };
+    }
+
+    /* ── PUBLIC API ── */
     refresh() {
         this._parseRows();
         this._render();
+        dispatch("datatable:refresh", { id: this.id });
+    }
+    search(val) {
+        this._state.globalSearch = val;
+        if (this._globalSearchEl) this._globalSearchEl.value = val;
+        this._state.page = 1;
+        this._render();
+        dispatch("datatable:search", { id: this.id, value: val });
+    }
+    filter(col, val) {
+        this._state.colFilter[col] = val;
+        this._state.page = 1;
+        this._render();
+        dispatch("datatable:filter", { id: this.id, col, value: val });
+    }
+    sort(col, dir) {
+        this._state.sortCol = col;
+        this._state.sortDir = dir;
+        this._state.page = 1;
+        this._syncAllSortIcons();
+        this._render();
+        dispatch("datatable:sort", { id: this.id, col, dir });
+    }
+    page(pageNum) {
+        this._state.page = pageNum;
+        this._render();
+        dispatch("datatable:page", { id: this.id, page: pageNum });
+    }
+    /**
+     * Exporter les données.
+     * @param {'excel'|'pdf'|'word'} format
+     * @param {'all'|'filtered'|'page'} [scope='filtered']
+     */
+    export(format, scope = "filtered") {
+        const { headers, data } = this._getExportData(scope);
+        const name = this.id;
+        const title = `${name}`;
+        if (format === "excel") exportExcelOOXML(headers, data, name);
+        else if (format === "pdf") exportPDF(headers, data, title);
+        else if (format === "word") exportWordOOXML(headers, data, title, name);
+        dispatch("datatable:export", { id: this.id, format, scope });
     }
     reset() {
         this._state.globalSearch = "";
