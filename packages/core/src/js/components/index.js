@@ -58,6 +58,8 @@ class UIKit {
     initUISelects(root) {
         root.querySelectorAll(`.ui-select:not([${UIKit.INIT_ATTR}])`).forEach(
             (el) => {
+                if (el.closest(".ui-select") !== el && el.tagName !== "SELECT")
+                    return; // évite double init sur wrapper généré
                 if (!el.dataset.placeholder) {
                     const ph = el.querySelector(".ui-select-placeholder");
                     if (ph) el.dataset.placeholder = ph.textContent.trim();

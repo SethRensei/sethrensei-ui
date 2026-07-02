@@ -6,15 +6,16 @@
 
         /* DROPDOWN */
         --select-dropdown-bg: var(--color-primary-50);
+        --select-dropdown-border: var(--border-color);
         --select-dropdown-z: 999;
         --select-max-height: 280px;
-
+        
         /* Trigger */
         --select-trigger-h: 42px;
         --select-trigger-px: 8px;
         --select-trigger-color: var(--color-primary-700);
         --select-trigger-placeholder: var(--color-primary-500);
-
+        
         /* OPTION */
         --option-hover-bg: var(--color-gray-300);
         --option-selected-bg: var(--color-primary-200);
@@ -22,11 +23,10 @@
         --option-px: 12px;
         --option-py: 9px;
         --option-radius: 7px;
-
+        
         /* Search */
+        --search-border: var(--border-color);
         --search-border: var(--color-primary-300);
-        --search-focus-border: var(--color-primary-500);
-        --search-bg: var(--color-primary-50);
 
         /* Badge */
         --badge-bg: var(--color-primary-300);
@@ -156,7 +156,7 @@
         right: 0;
         z-index: var(--select-dropdown-z);
         background: var(--select-dropdown-bg);
-        border: 1.5px solid var(--border-color);
+        border: 1.5px solid var(--select-dropdown-border);
         border-radius: var(--radius-md);
         box-shadow: var(--select-shadow);
         overflow: hidden;
@@ -185,26 +185,17 @@
         width: 100%;
         height: 34px;
         padding: 0 10px 0 32px;
-        background: var(--search-bg);
-        border: 1.5px solid transparent;
+        background: transparent;
+        border: 1.5px solid var(--search-border);
         border-radius: 7px;
         font-family: inherit;
         font-size: 13px;
-        color: var(--select-trigger-color);
         outline: none;
+        color: var(--search-color, --color-balck);
         transition: border-color var(--t-base), background var(--t-base);
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8' stroke='%239ca3af' stroke-width='2'/%3E%3Cpath d='m21 21-4.35-4.35' stroke='%239ca3af' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: 10px center;
-
-        &:focus {
-            border-color: var(--ui-focus-color);
-            background: var(--search-bg);
-            box-shadow:
-                0 0 0 3px color-mix(in srgb,
-                    var(--ui-focus-color) 25%,
-                    transparent);
-        }
     }
 
     .ui-select-search::placeholder {
@@ -217,7 +208,7 @@
         overflow-y: auto;
         max-height: var(--select-max-height);
         scrollbar-width: thin;
-        scrollbar-color: var(--color-gray-300) transparent;
+        scrollbar-color: var(--color-primary-500) transparent;
     }
 
     .ui-select-options::-webkit-scrollbar {
@@ -292,6 +283,18 @@
         text-overflow: ellipsis;
     }
 
+    /* SELECT NATIVE using <select class="ui-select-native"></select> */
+    .ui-select-native {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
     /* Empty state */
     .ui-select-empty {
         padding: 16px 12px;
@@ -388,46 +391,6 @@
     }
 
     /* ═══════════════════════════════════════════════════════════
-       COLOR VARIANTS
-       ═══════════════════════════════════════════════════════════ */
-
-    .ui-select-primary {
-        --select-border-focus: #6366f1;
-        --select-shadow-focus: 0 0 0 3px rgba(99, 102, 241, .15);
-        --option-selected-bg: #eef0ff;
-        --option-selected-color: #4f46e5;
-        --badge-bg: #eef0ff;
-        --badge-color: #4f46e5;
-    }
-
-    .ui-select-success {
-        --select-border-focus: #22c55e;
-        --select-shadow-focus: 0 0 0 3px rgba(34, 197, 94, .15);
-        --option-selected-bg: #f0fdf4;
-        --option-selected-color: #16a34a;
-        --badge-bg: #dcfce7;
-        --badge-color: #15803d;
-    }
-
-    .ui-select-warning {
-        --select-border-focus: #f59e0b;
-        --select-shadow-focus: 0 0 0 3px rgba(245, 158, 11, .15);
-        --option-selected-bg: #fffbeb;
-        --option-selected-color: #b45309;
-        --badge-bg: #fef3c7;
-        --badge-color: #92400e;
-    }
-
-    .ui-select-danger {
-        --select-border-focus: #ef4444;
-        --select-shadow-focus: 0 0 0 3px rgba(239, 68, 68, .15);
-        --option-selected-bg: #fef2f2;
-        --option-selected-color: #dc2626;
-        --badge-bg: #fee2e2;
-        --badge-color: #b91c1c;
-    }
-
-    /* ═══════════════════════════════════════════════════════════
        STATE MODIFIERS
        ═══════════════════════════════════════════════════════════ */
 
@@ -437,6 +400,13 @@
         cursor: not-allowed;
         pointer-events: none;
     }
+
+        .ui-option[data-disabled="true"] {
+            background: transparent;
+            color: #9ca3af;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
 
     .ui-select.ui-error .ui-select-trigger {
         border-color: var(--color-destructive-500);
