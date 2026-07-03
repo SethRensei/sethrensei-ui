@@ -41,6 +41,26 @@ export class UISelect {
         });
         if (select.multiple) wrapper.dataset.multiple = "true";
         if (select.disabled) wrapper.dataset.disabled = "true";
+
+        // -----------------------------------------------------------------
+        // Autoriser un placeholder sur un <select> natif
+        // -----------------------------------------------------------------
+        if (
+            wrapper.dataset.allowEmpty === "true" &&
+            !Array.from(select.options).some(o => o.hasAttribute("selected")) &&
+            !select.querySelector('option[value=""][data-ui-placeholder]')
+        ) {
+            const placeholder = document.createElement("option");
+
+            placeholder.value = "";
+            placeholder.textContent = "";
+            placeholder.hidden = true;
+            placeholder.selected = true;
+            placeholder.dataset.uiPlaceholder = "true";
+
+            select.prepend(placeholder);
+        }
+
         select.classList.add("ui-select-native");
         select.setAttribute("tabindex", "-1");
         select.setAttribute("aria-hidden", "true");
@@ -53,7 +73,7 @@ export class UISelect {
         const select = this.el.querySelector(".ui-select-native");
         let html = "";
         Array.from(select.options).forEach((o) => {
-            if (!o.value && !o.textContent.trim()) return; // ignore option placeholder vide
+            if (o.dataset.uiPlaceholder === "true") return; // ignore option placeholder vide
             html += `<div class="ui-option" data-value="${this._escHtml(o.value)}"${o.disabled ? ' data-disabled="true"' : ""}>
                 <span class="ui-option-label">${this._escHtml(o.textContent.trim())}</span>
             </div>`;
@@ -62,6 +82,7 @@ export class UISelect {
         // Copie les data-* additionnels de chaque <option> (couleurs, data-select-class, ...)
         // vers son .ui-option généré, pour permettre une surcharge par option.
         Array.from(select.options).forEach((o) => {
+            if (o.dataset.uiPlaceholder === "true") return;
             const opt = optsList.querySelector(
                 `.ui-option[data-value="${CSS.escape(o.value)}"]`,
             );
@@ -70,7 +91,9 @@ export class UISelect {
                 opt.dataset[key] = value;
             });
         });
+
         Array.from(select.selectedOptions).forEach((o) => {
+             if (o.dataset.uiPlaceholder === "true") return;
             const opt = optsList.querySelector(
                 `.ui-option[data-value="${CSS.escape(o.value)}"]`,
             );
@@ -297,7 +320,11 @@ export class UISelect {
         }
         this._renderTrigger();
         this._syncHidden();
-        this._emit("select:change", { value: this.getValue() });
+        this._emit("select:change", {
+            value: this.getValue(),
+            option: optEl,
+            dataset: { ...optEl.dataset },
+        });
         if (!this.multiple && this.opts.closeOnSelect) this.close();
     }
     /* ── Deselect by value ───────────────────────────────────── */
@@ -391,15 +418,34 @@ export class UISelect {
             baseInput.value = value ?? "";
         }
     }
+
     /* Synchronise le <select> natif d'origine + déclenche son événement "change" */
     _syncNativeSelect() {
         const select = this.el.querySelector(".ui-select-native");
         if (!select) return;
         Array.from(select.options).forEach((o) => {
+            if (o.dataset.uiPlaceholder === "true") {
+                o.selected = false;
+                return;
+            }
+
             o.selected = this.selected.has(o.value);
         });
+
+        // Si aucune valeur sélectionnée,
+        // on réactive le placeholder.
+        if (this.selected.size === 0) {
+            const placeholder = select.querySelector(
+                'option[data-ui-placeholder="true"]',
+            );
+
+            if (placeholder) {
+                placeholder.selected = true;
+            }
+        }
         select.dispatchEvent(new Event("change", { bubbles: true }));
     }
+
     /* ── Keyboard: trigger ───────────────────────────────────── */
     _handleTriggerKey(e) {
         const open = this.el.dataset.open === "true";
@@ -489,23 +535,23 @@ export class UISelect {
         // Couleurs ciblées via des data-attributs dédiés → variables CSS inline
         if (this.dropdown) {
             this._applyColorVars(this.dropdown, {
-                dropdownBg: "--select-dropdown-bg",
-                dropdownBorder: "--select-dropdown-border",
+                uidropdownBg: "--select-dropdown-bg",
+                uidropdownBorder: "--select-dropdown-border",
             });
         }
         if (this.searchEl) {
             this._applyColorVars(this.searchEl, {
-                searchBorder: "--search-border",
-                searchColor: "--search-color",
+                uisearchBorder: "--search-border",
+                uisearchColor: "--search-color",
             });
         }
         this.allOptions().forEach((opt) => {
             this._applyColorVars(opt, {
-                optionBg: "--option-bg",
-                optionColor: "--option-color",
-                optionHoverBg: "--option-hover-bg",
-                optionSelectedBg: "--option-selected-bg",
-                optionSelectedColor: "--option-selected-color",
+                uioptionBg: "--option-bg",
+                uioptionColor: "--option-color",
+                uioptionHoverBg: "--option-hover-bg",
+                uioptionSelectedBg: "--option-selected-bg",
+                uioptionSelectedColor: "--option-selected-color",
             });
         });
     }
@@ -560,7 +606,10 @@ export class UISelect {
         this._renderTrigger();
         this._syncHidden();
         this._emit("select:clear");
-        this._emit("select:change", { value: this.getValue() });
+        this._emit("select:change", {
+            value: this.getValue(),
+            option: null,
+        });
     }
     destroy() {
         document.removeEventListener("mousedown", this._outsideHandler);

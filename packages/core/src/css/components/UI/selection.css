@@ -21,6 +21,24 @@
         font-size: .875rem;
     }
 
+    [class*="ui-check"]:focus-visible+*,
+    [class*="ui-radio"]:focus-visible+* {
+        outline: 2px solid var(--color-primary-600);
+        outline-offset: 2px;
+    }
+
+    .ui-check:disabled,
+    .ui-radio:disabled {
+        pointer-events: none;
+    }
+
+    .ui-check:disabled~*,
+    .ui-radio:disabled~*,
+    label:has(:disabled) {
+        opacity: .45;
+        cursor: not-allowed;
+    }
+
     /* RADIO PILL */
     .ui-radio-pill {
         position: relative;
@@ -33,6 +51,7 @@
         background: var(--color-primary-50);
         border: 1px solid var(--color-primary-300);
         transition: .2s;
+        user-select: none;
     }
 
     .ui-radio-pill-indicator {
@@ -43,6 +62,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
     }
 
     .ui-radio-pill-dot {
@@ -51,10 +71,23 @@
         border-radius: 9999px;
         background: var(--color-primary-50);
         opacity: 0;
+        transform: scale(.4);
+        transition: opacity .15s, transform .15s;
     }
 
     .ui-radio:checked+.ui-radio-pill-indicator .ui-radio-pill-dot {
         opacity: 1;
+        transform: scale(1);
+    }
+
+    .ui-radio:checked~.ui-radio-pill,
+    .ui-radio:checked+.ui-radio-pill-indicator {
+        box-shadow: none;
+    }
+
+    label:has(.ui-radio:checked).ui-radio-pill {
+        background: var(--color-primary-100);
+        border-color: var(--color-primary-500);
     }
 
     /* CLASSIC CHECKBOX */
@@ -65,6 +98,7 @@
         align-items: center;
         gap: .5rem;
         cursor: pointer;
+        user-select: none;
     }
 
     .ui-checkbox-indicator {
@@ -73,13 +107,32 @@
         border-radius: var(--radius-sm);
         border: 2px solid var(--color-primary-500);
         position: relative;
+        flex-shrink: 0;
+        transition: .15s;
+    }
+
+    .ui-check:checked+.ui-checkbox-indicator {
+        background: var(--color-primary-500);
     }
 
     .ui-check:checked+.ui-checkbox-indicator::after {
         content: "";
         position: absolute;
-        inset: 3px;
+        inset: 0;
+        background: #fff;
+        clip-path: polygon(20% 47%, 35% 62%, 78% 20%, 88% 30%,
+                35% 82%, 10% 57%);
+    }
+
+    .ui-check:indeterminate+.ui-checkbox-indicator {
         background: var(--color-primary-500);
+    }
+
+    .ui-check:indeterminate+.ui-checkbox-indicator::after {
+        content: "";
+        position: absolute;
+        inset: 5px 3px;
+        background: #fff;
         border-radius: 2px;
     }
 
@@ -89,6 +142,8 @@
         display: inline-flex;
         align-items: center;
         gap: .5rem;
+        cursor: pointer;
+        user-select: none;
     }
 
     .ui-toggle-track {
@@ -98,6 +153,7 @@
         background: var(--color-zinc-300);
         position: relative;
         transition: .2s;
+        flex-shrink: 0;
     }
 
     .ui-toggle-thumb {
@@ -109,6 +165,7 @@
         left: 3px;
         top: 3px;
         transition: .2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
     }
 
     .ui-check:checked+.ui-toggle-track {
@@ -130,16 +187,88 @@
 
     .ui-radio-group label {
         position: relative;
+        cursor: pointer;
+    }
+
+    .ui-radio-group label {
+        position: relative;
+        cursor: pointer;
     }
 
     .ui-radio-group span {
         display: block;
         padding: .3rem 1rem;
         cursor: pointer;
+        transition: .15s;
     }
 
     .ui-radio-group .ui-radio:checked+span {
         background: var(--color-primary-500);
         color: white;
+    }
+
+    .ui-radio-group label:not(:last-child) span {
+        border-right: 1px solid var(--color-zinc-300);
+    }
+
+    /* ============ NOUVEAU : CHIP (multi-select) ============ */
+    .ui-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .35rem .9rem;
+        border-radius: 9999px;
+        border: 1px solid var(--color-zinc-300);
+        background: #fff;
+        font-size: .8rem;
+        cursor: pointer;
+        transition: .15s;
+        user-select: none;
+    }
+
+    .ui-chip::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 9999px;
+        background: var(--color-zinc-300);
+        transition: .15s;
+    }
+
+    .ui-check:checked+.ui-chip {
+        background: var(--color-zinc-900);
+        color: #fff;
+        border-color: var(--color-zinc-900);
+    }
+
+    .ui-check:checked+.ui-chip::before {
+        background: var(--color-primary-500);
+    }
+
+    /* ============ NOUVEAU : SWATCH (couleur) ============ */
+    .ui-swatch-wrap {
+        display: inline-flex;
+        gap: .6rem;
+    }
+
+    .ui-swatch {
+        width: 32px;
+        height: 32px;
+        border-radius: 9999px;
+        cursor: pointer;
+        display: block;
+        border: 2px solid transparent;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+        transition: .15s;
+    }
+
+    .ui-radio:checked+.ui-swatch {
+        border-color: var(--color-zinc-900);
+        transform: scale(1.1);
+    }
+
+    .ui-radio:focus-visible+.ui-swatch {
+        outline: 2px solid var(--color-primary-600);
+        outline-offset: 3px;
     }
 }
