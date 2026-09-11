@@ -47,7 +47,9 @@ export class UISelect {
         // -----------------------------------------------------------------
         if (
             wrapper.dataset.allowEmpty === "true" &&
-            !Array.from(select.options).some(o => o.hasAttribute("selected")) &&
+            !Array.from(select.options).some((o) =>
+                o.hasAttribute("selected"),
+            ) &&
             !select.querySelector('option[value=""][data-ui-placeholder]')
         ) {
             const placeholder = document.createElement("option");
@@ -71,16 +73,36 @@ export class UISelect {
     /* Construit les .ui-option depuis les <option> du <select> natif */
     _buildOptionsFromNativeSelect(optsList) {
         const select = this.el.querySelector(".ui-select-native");
+
+        const isDisabled = (o) =>
+            o.disabled ||
+            (o.parentElement?.tagName === "OPTGROUP" &&
+                o.parentElement.disabled);
+
+        const renderOption = (o) => {
+            if (o.dataset.uiPlaceholder === "true") return "";
+            return `<div class="ui-option" data-value="${this._escHtml(o.value)}"${isDisabled(o) ? ' data-disabled="true"' : ""}>
+            <span class="ui-option-label">${this._escHtml(o.textContent.trim())}</span>
+        </div>`;
+        };
+
         let html = "";
-        Array.from(select.options).forEach((o) => {
-            if (o.dataset.uiPlaceholder === "true") return; // ignore option placeholder vide
-            html += `<div class="ui-option" data-value="${this._escHtml(o.value)}"${o.disabled ? ' data-disabled="true"' : ""}>
-                <span class="ui-option-label">${this._escHtml(o.textContent.trim())}</span>
-            </div>`;
+        Array.from(select.children).forEach((child) => {
+            if (child.tagName === "OPTGROUP") {
+                html += `<div class="ui-option-group-label"${child.disabled ? ' data-disabled="true"' : ""}>${this._escHtml(child.label || "")}</div>`;
+                Array.from(child.children).forEach((o) => {
+                    html += renderOption(o);
+                });
+            } else if (child.tagName === "OPTION") {
+                html += renderOption(child);
+            }
         });
+
         optsList.insertAdjacentHTML("afterbegin", html);
+
         // Copie les data-* additionnels de chaque <option> (couleurs, data-select-class, ...)
         // vers son .ui-option généré, pour permettre une surcharge par option.
+        // (select.options aplati automatiquement les <optgroup>, donc rien à changer ici)
         Array.from(select.options).forEach((o) => {
             if (o.dataset.uiPlaceholder === "true") return;
             const opt = optsList.querySelector(
@@ -93,7 +115,7 @@ export class UISelect {
         });
 
         Array.from(select.selectedOptions).forEach((o) => {
-             if (o.dataset.uiPlaceholder === "true") return;
+            if (o.dataset.uiPlaceholder === "true") return;
             const opt = optsList.querySelector(
                 `.ui-option[data-value="${CSS.escape(o.value)}"]`,
             );
@@ -286,6 +308,7 @@ export class UISelect {
             opt.dataset.hidden = matches ? "false" : "true";
             if (matches) visibleCount++;
         });
+        this._syncGroupLabels();
         if (this.emptyMsg) {
             this.emptyMsg.classList.toggle("visible", visibleCount === 0);
         }
@@ -326,6 +349,29 @@ export class UISelect {
             dataset: { ...optEl.dataset },
         });
         if (!this.multiple && this.opts.closeOnSelect) this.close();
+    }
+    /* Cache un .ui-option-group-label si aucune .ui-option de son groupe n'est visible */
+    _syncGroupLabels() {
+        this.optsList
+            .querySelectorAll(".ui-option-group-label")
+            .forEach((label) => {
+                let node = label.nextElementSibling;
+                let hasVisible = false;
+                while (
+                    node &&
+                    !node.classList.contains("ui-option-group-label")
+                ) {
+                    if (
+                        node.classList.contains("ui-option") &&
+                        node.dataset.hidden !== "true"
+                    ) {
+                        hasVisible = true;
+                        break;
+                    }
+                    node = node.nextElementSibling;
+                }
+                label.style.display = hasVisible ? "" : "none";
+            });
     }
     /* ── Deselect by value ───────────────────────────────────── */
     _deselect(value) {

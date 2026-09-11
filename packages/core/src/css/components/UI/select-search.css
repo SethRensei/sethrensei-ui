@@ -202,6 +202,17 @@
         color: var(--color-gray-400);
     }
 
+    /* ── Options Group ──────────────────────────────────────── */
+    .ui-option-group-label:not(:first-child) {
+        margin-top: 6px;
+        padding-top: 10px;
+        border-top: 1px solid var(--search-border);
+    }
+
+    .ui-option-group-label[data-disabled="true"] {
+        opacity: .5;
+    }
+
     /* ── Options List ──────────────────────────────────────── */
     .ui-select-options {
         padding: 3px;
