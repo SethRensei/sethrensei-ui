@@ -244,8 +244,9 @@
         padding: var(--option-py) var(--option-px);
         border-radius: var(--option-radius);
         cursor: pointer;
-        transition: background var(--t-fast);
-        color: var(--color-gray-700);
+        transition: background var(--t-fast), color var(--t-fast);
+        background: var(--option-bg, transparent);
+        color: var(--option-color, var(--color-gray-700));
         font-weight: 400;
     }
 
@@ -262,6 +263,10 @@
 
     .ui-option[data-hidden="true"] {
         display: none;
+    }
+
+    .ui-option[data-virtual="true"] {
+        font-style: italic;
     }
 
     /* Checkbox indicator */
@@ -308,15 +313,47 @@
     }
     /* Empty state */
     .ui-select-empty {
-        padding: 16px 12px;
+        display: none;
+        padding: 10px 12px;
+        gap: 8px;
         text-align: center;
         color: var(--color-gray-400);
         font-size: 13px;
-        display: none;
     }
 
     .ui-select-empty.visible {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ui-select-empty-text {
+        flex: 1;
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ui-select-add-btn {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 1.5px solid var(--option-selected-bg, var(--color-primary-500));
+        background: transparent;
+        color: var(--option-selected-bg, var(--color-primary-500));
+        cursor: pointer;
+        padding: 0;
+        transition: background var(--t-fast), color var(--t-fast);
+    }
+
+    .ui-select-add-btn:hover {
+        background: var(--option-selected-bg, var(--color-primary-500));
+        color: var(--color-white);
     }
 
     /* ── Badges (Multi Select) ─────────────────────────────── */

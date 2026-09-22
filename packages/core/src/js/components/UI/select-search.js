@@ -214,6 +214,11 @@ export class UISelect {
         this.clearBtn = this.el.querySelector(".ui-select-clear");
         this.content = this.trigger.querySelector(".ui-select-trigger-content");
         this.emptyMsg = this.el.querySelector(".ui-select-empty");
+        
+        if (this.emptyMsg && this.emptyMsg.dataset.defaultText === undefined) {
+            this.emptyMsg.dataset.defaultText =
+                this.emptyMsg.textContent.trim();
+        }
         this.allOptions = () => [
             ...this.optsList.querySelectorAll(".ui-option"),
         ];
@@ -267,9 +272,13 @@ export class UISelect {
                 opt.setAttribute("aria-selected", "true");
             }
         });
+        if (!this.isNative && this.el.dataset.creatable === "true") {
+            this._restoreMissingInitialValue();
+        }
         this._renderTrigger();
         this._syncHidden();
     }
+
     /* ── Open ────────────────────────────────────────────────── */
     open() {
         if (this.el.dataset.disabled === "true") return;
@@ -295,6 +304,7 @@ export class UISelect {
     toggle() {
         this.el.dataset.open === "true" ? this.close() : this.open();
     }
+
     /* ── Search ──────────────────────────────────────────────── */
     search(query) {
         const q = query.toLowerCase().trim();
@@ -309,13 +319,12 @@ export class UISelect {
             if (matches) visibleCount++;
         });
         this._syncGroupLabels();
-        if (this.emptyMsg) {
-            this.emptyMsg.classList.toggle("visible", visibleCount === 0);
-        }
+        this._renderEmptyState(query.trim(), visibleCount);
         this._focusIdx = -1;
         this._clearFocusedOption();
         this._emit("select:search", { query });
     }
+
     /* ── Select / deselect an option ─────────────────────────── */
     _selectOption(optEl) {
         if (optEl.dataset.disabled === "true") return;
@@ -529,14 +538,21 @@ export class UISelect {
                 e.preventDefault();
                 this._moveFocus(-1);
                 break;
-            case "Enter":
+            case "Enter": {
                 e.preventDefault();
-                if (this._focusIdx >= 0) {
-                    const vis = this.visibleOptions();
-                    if (vis[this._focusIdx])
-                        this._selectOption(vis[this._focusIdx]);
+                const vis = this.visibleOptions();
+                if (this._focusIdx >= 0 && vis[this._focusIdx]) {
+                    this._selectOption(vis[this._focusIdx]);
+                } else if (
+                    this.el.dataset.creatable === "true" &&
+                    this.searchEl &&
+                    this.searchEl.value.trim() &&
+                    vis.length === 0
+                ) {
+                    this._createFromQuery(this.searchEl.value);
                 }
                 break;
+            }
             case "Escape":
                 this.close();
                 this.trigger.focus();
@@ -563,6 +579,110 @@ export class UISelect {
         this.optsList
             .querySelectorAll(".ui-focused")
             .forEach((o) => o.classList.remove("ui-focused"));
+    }
+
+    /* ── Creatable : état vide + bouton d'ajout ─────────────────── */
+    _renderEmptyState(query, visibleCount) {
+        if (!this.emptyMsg) return;
+        const show = visibleCount === 0;
+        this.emptyMsg.classList.toggle("visible", show);
+        if (!show) return;
+
+        const creatable = this.el.dataset.creatable === "true";
+        const emptyText = this.emptyMsg.dataset.defaultText || "No results";
+
+        if (creatable && query) {
+            this.emptyMsg.innerHTML = `
+                <span class="ui-select-empty-text">${this._escHtml(emptyText)}</span>
+                <button type="button" class="ui-select-add-btn" aria-label="Ajouter ${this._escHtml(query)}">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>
+                </button>`;
+            this.emptyMsg
+                .querySelector(".ui-select-add-btn")
+                .addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    this._createFromQuery(query);
+                });
+        } else {
+            this.emptyMsg.textContent = emptyText;
+        }
+    }
+
+    /* Crée (ou réutilise) une .ui-option "virtuelle" pour une valeur hors-liste */
+    _createVirtualOption(value, label = value) {
+        let opt = this.optsList.querySelector(
+            `.ui-option[data-value="${CSS.escape(value)}"]`,
+        );
+        if (opt) return opt;
+        this.optsList.insertAdjacentHTML(
+            "beforeend",
+            `<div class="ui-option" data-value="${this._escHtml(value)}" data-virtual="true">
+                <span class="ui-option-checkbox"></span>
+                <span class="ui-option-label">${this._escHtml(label)}</span>
+            </div>`,
+        );
+        opt = this.optsList.lastElementChild;
+        this._applyColorVars(opt, {
+            uioptionBg: "--option-bg",
+            uioptionColor: "--option-color",
+            uioptionHoverBg: "--option-hover-bg",
+            uioptionSelectedBg: "--option-selected-bg",
+            uioptionSelectedColor: "--option-selected-color",
+        });
+        // Mode natif : injecte aussi un vrai <option> pour la soumission du formulaire
+        if (this.isNative) {
+            const select = this.el.querySelector(".ui-select-native");
+            if (select && !select.querySelector(`option[value="${CSS.escape(value)}"]`)) {
+                const o = document.createElement("option");
+                o.value = value;
+                o.textContent = label;
+                o.dataset.virtual = "true";
+                select.appendChild(o);
+            }
+        }
+        return opt;
+    }
+
+    /* Crée une option depuis le texte tapé et la sélectionne (single ET multiple) */
+    _createFromQuery(query) {
+        const value = query.trim();
+        if (!value) return;
+        const opt = this._createVirtualOption(value, value);
+        this._selectOption(opt); // réutilise tout le flux standard (badge, close si single, etc.)
+        if (this.searchEl) {
+            this.searchEl.value = "";
+            this.search("");
+        }
+        this._emit("select:create", { value });
+    }
+
+    /* Restaure au chargement une valeur déjà stockée mais absente des options rendues (mode div) */
+    _restoreMissingInitialValue() {
+        if (this.multiple) {
+            const raw = this.el.dataset.initialValues;
+            if (!raw) return;
+            let entries = [];
+            try { entries = JSON.parse(raw); } catch { return; }
+            entries.forEach(({ value, label }) => {
+                if (!value || this.selected.has(String(value))) return;
+                const opt = this._createVirtualOption(String(value), label || String(value));
+                opt.dataset.selected = "true";
+                opt.setAttribute("aria-selected", "true");
+                this.selected.set(String(value), label || String(value));
+            });
+        } else {
+            if (this.selected.size > 0) return; // déjà une .ui-option[data-selected] valide
+            const baseInput = this.el.querySelector(
+                'input[type="hidden"]:not([data-ui-select])',
+            );
+            const value = baseInput?.value?.trim();
+            if (!value) return;
+            const label = this.el.dataset.initialLabel || value;
+            const opt = this._createVirtualOption(value, label);
+            opt.dataset.selected = "true";
+            opt.setAttribute("aria-selected", "true");
+            this.selected.set(value, label);
+        }
     }
     /* ── Style overrides : data-select-class + data-attributs couleur ── */
     _applyStyleOverrides() {
@@ -610,6 +730,7 @@ export class UISelect {
             if (value) node.style.setProperty(cssVar, value);
         });
     }
+
     /* ── Public API ──────────────────────────────────────────── */
     getValue() {
         if (this.multiple) return [...this.selected.keys()];
@@ -671,6 +792,7 @@ export class UISelect {
             delete this.el._uiSelect;
         }
     }
+
     /* ── Helpers ─────────────────────────────────────────────── */
     _emit(name, detail = {}) {
         this.el.dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
