@@ -1,9 +1,12 @@
 /**
- * Nouveauté v4 :
- *  • getStyledContent() — retourne le HTML avec des classes Tailwind inlinées
- *    sur chaque balise, de sorte que le contenu reste lisible même avec
- *    Tailwind Preflight (reset CSS). Utilisez cette méthode pour persister
- *    en base de données à la place de getContent().
+ * Le contenu persistant est toujours du HTML sémantique valide. Les classes
+ * ui-editor-content sont ajoutées à la copie sérialisée afin que le HTML
+ * conserve son apparence avec ou sans le contexte du composant.
+ *
+ * API de persistance :
+ *  • getValue() / getStyledContent() — HTML à stocker puis à fournir à
+ *    setContent() lors d'une réédition.
+ *  • getContent() — HTML éditable sans classes de présentation ajoutées.
  *
  *    Les classes injectées suivent les conventions utilitaires Tailwind
  *    (prose-like) : taille, graisse, marge, couleur, etc.
@@ -22,30 +25,29 @@ export class UIEditor {
     #content = null;
     #buttons = new Map();
 
-    // ─── Mapping Tailwind par défaut ─────────────────────────────────────
-    // Chaque entrée : balise → classes Tailwind injectées lors de getStyledContent()
-    // Surchargeables via options.tailwindMap
+    // Classes stables ajoutées au HTML persisté. Les anciennes clés
+    // tailwindMap restent supportées pour compatibilité.
     static CLASS_MAP = {
-        h1: "ui-editor-content h1",
-        h2: "ui-editor-content h2",
-        h3: "ui-editor-content h3",
-        h4: "ui-editor-content h4",
-        h5: "ui-editor-content h5",
-        p: "ui-editor-content p",
-        blockquote: "ui-editor-content blockquote",
-        ul: "ui-editor-content ul",
-        ol: "ui-editor-content ol",
+        h1: "ui-editor-h1",
+        h2: "ui-editor-h2",
+        h3: "ui-editor-h3",
+        h4: "ui-editor-h4",
+        h5: "ui-editor-h5",
+        p: "ui-editor-p",
+        blockquote: "ui-editor-blockquote",
+        ul: "ui-editor-ul",
+        ol: "ui-editor-ol",
         li: "leading-relaxed",
         strong: "font-bold",
         em: "italic",
         u: "underline",
         s: "line-through",
-        a: "ui-editor-content a",
+        a: "ui-editor-a",
         // Listes imbriquées
-        "ul ul": "ui-editor-content ul ul",
-        "ul ul ul": "ui-editor-content ul ul ul",
-        "ol ol": "ui-editor-content ol ol",
-        "ol ol ol": "ui-editor-content ol ol ol",
+        "ul ul": "ui-editor-nested-list",
+        "ul ul ul": "ui-editor-nested-list-3",
+        "ol ol": "ui-editor-nested-list",
+        "ol ol ol": "ui-editor-nested-list-3",
     };
 
     static COMMANDS = {
@@ -175,13 +177,14 @@ export class UIEditor {
     // ══════════════════════════════════════════════════════════════════════
 
     /**
-     * Définit le contenu HTML de l'éditeur.
-     * Accepte aussi le HTML stylé (avec classes Tailwind) retourné par
-     * getStyledContent() : les classes sont ignorées visuellement dans
-     * l'éditeur (qui a ses propres styles CSS) mais restent dans le markup.
+     * Définit le contenu HTML de l'éditeur. Le HTML précédemment retourné par
+     * getValue() peut être réinjecté tel quel : ses classes sont conservées.
      */
     setContent(html, { silent = false } = {}) {
-        const clean = this.#options.sanitize ? this.#sanitize(html) : html;
+        const normalized = this.#decodePersistedHtml(String(html ?? ""));
+        const clean = this.#options.sanitize
+            ? this.#sanitize(normalized)
+            : normalized;
         this.#content.innerHTML = clean;
         this.#sync(silent);
         return this;
@@ -189,6 +192,19 @@ export class UIEditor {
 
     getContent() {
         return this.#content.innerHTML;
+    }
+
+    /**
+     * Retourne la valeur canonique à envoyer au serveur ou à stocker.
+     * Cette valeur ne dépend d'aucun langage côté serveur : elle est composée
+     * uniquement de HTML et peut être réinjectée directement avec setContent().
+     */
+    getValue() {
+        return this.getStyledContent();
+    }
+
+    getHTML() {
+        return this.getValue();
     }
     getText() {
         return this.#content.textContent ?? "";
@@ -218,9 +234,11 @@ export class UIEditor {
     }
 
     /**
-     * Retourne le HTML avec des classes Tailwind injectées sur chaque balise.
-     * À utiliser pour persister en base de données afin que le contenu
-     * soit lisible même sous Tailwind Preflight (reset CSS).
+     * Retourne le HTML prêt à être persisté.
+     *
+     * Le DOM original n'est jamais modifié : les classes configurées sont
+     * ajoutées uniquement à la copie sérialisée. Ainsi, une réédition ne
+     * cumule pas les classes et conserve les attributs/classes personnalisés.
      *
      * @param {object} [mapOverride] — surcharge ponctuelle du tailwindMap
      * @returns {string} HTML stylé
@@ -614,10 +632,14 @@ export class UIEditor {
         const html = this.getContent();
         const styled = this.getStyledContent();
         this.#source.value = styled;
-        this.#source.dispatchEvent(new Event("input", { bubbles: true }));
-        this.#source.dispatchEvent(new Event("change", { bubbles: true }));
         if (!silent) {
-            this.#emit(UIEditor.EVENTS.CHANGE, { html, styled });
+            this.#source.dispatchEvent(new Event("input", { bubbles: true }));
+            this.#source.dispatchEvent(new Event("change", { bubbles: true }));
+            this.#emit(UIEditor.EVENTS.CHANGE, {
+                html,
+                styled,
+                value: styled,
+            });
             this.#options.onChange?.call(this, html, this);
         }
     }
@@ -625,21 +647,66 @@ export class UIEditor {
     #sanitize(html) {
         const t = document.createElement("template");
         t.innerHTML = html;
-        t.content
-            .querySelectorAll("script, style")
-            .forEach((el) => el.remove());
+        const allowedTags = new Set([
+            "A",
+            "B",
+            "BLOCKQUOTE",
+            "BR",
+            "CODE",
+            "DEL",
+            "DIV",
+            "EM",
+            "H1",
+            "H2",
+            "H3",
+            "H4",
+            "H5",
+            "I",
+            "LI",
+            "OL",
+            "P",
+            "PRE",
+            "S",
+            "STRONG",
+            "U",
+            "UL",
+        ]);
         t.content.querySelectorAll("*").forEach((el) => {
+            if (!allowedTags.has(el.tagName)) {
+                el.replaceWith(...el.childNodes);
+                return;
+            }
             [...el.attributes].forEach((attr) => {
                 const name = attr.name.toLowerCase();
                 const value = attr.value.trim().toLowerCase();
-                if (
-                    name.startsWith("on") ||
-                    (name === "href" && value.startsWith("javascript:"))
-                )
+                const isUnsafeUrl =
+                    (name === "href" || name === "cite") &&
+                    /^(?:javascript|vbscript|data):/i.test(value);
+                const isUnsafeStyle =
+                    name === "style" &&
+                    /(?:expression|javascript\s*:|url\s*\(\s*(?:javascript|data):)/i.test(
+                        value,
+                    );
+                if (name.startsWith("on") || isUnsafeUrl || isUnsafeStyle)
                     el.removeAttribute(attr.name);
             });
         });
         return t.innerHTML;
+    }
+
+    /**
+     * Des versions précédentes pouvaient stocker le HTML encodé (`&lt;h1&gt;`)
+     * au lieu du markup. On ne décode que les valeurs qui ressemblent
+     * clairement à du HTML encodé, afin de préserver les entités normales
+     * présentes dans le texte (`&amp;`, `&lt;`).
+     */
+    #decodePersistedHtml(html) {
+        if (!/^(\s|&(?:lt|gt|quot|apos|amp);|<)/i.test(html)) return html;
+        if (!/&lt;\/?[a-z][^&]*&gt;/i.test(html)) return html;
+
+        const textarea = document.createElement("textarea");
+        textarea.innerHTML = html;
+        return textarea.value;
     }
 
     #on(target, event, handler) {

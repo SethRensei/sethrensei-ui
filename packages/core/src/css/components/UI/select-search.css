@@ -269,6 +269,11 @@
         font-style: italic;
     }
 
+    .ui-option[data-stale="true"] {
+        font-style: italic;
+        opacity: .85;
+    }
+
     /* Checkbox indicator */
     .ui-option-checkbox {
         flex-shrink: 0;

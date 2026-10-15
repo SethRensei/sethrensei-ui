@@ -98,51 +98,83 @@
     }
 
     /* Mise en forme du contenu généré (cohérente avec une typographie "prose") */
-    .ui-editor-content h1, h2, h3, h4, h5 {
+    .ui-editor-content h1,
+    .ui-editor-content h2,
+    .ui-editor-content h3,
+    .ui-editor-content h4,
+    .ui-editor-content h5,
+    .ui-editor-content.h1,
+    .ui-editor-content.h2,
+    .ui-editor-content.h3,
+    .ui-editor-content.h4,
+    .ui-editor-content.h5,
+    .ui-editor-h1,
+    .ui-editor-h2,
+    .ui-editor-h3,
+    .ui-editor-h4,
+    .ui-editor-h5 {
         color: inherit;
     }
 
-    .ui-editor-content h1 {
+    .ui-editor-content h1,
+    .ui-editor-content.h1,
+    .ui-editor-h1 {
         font-size: var(--text-3xl);
         font-weight: 800;
         margin: 1rem 0 0.5rem;
     }
 
-    .ui-editor-content h2 {
+    .ui-editor-content h2,
+    .ui-editor-content.h2,
+    .ui-editor-h2 {
         font-weight: 700;
         font-size: var(--text-2xl);
         margin: 0.75rem 0 0.375rem;
     }
 
-    .ui-editor-content h3 {
+    .ui-editor-content h3,
+    .ui-editor-content.h3,
+    .ui-editor-h3 {
         font-weight: 700;
         font-size: var(--text-xl);
         margin: 0.625rem 0 0.3rem;
     }
 
-    .ui-editor-content h4 {
+    .ui-editor-content h4,
+    .ui-editor-content.h4,
+    .ui-editor-h4 {
         font-weight: 600;
         font-size: var(--text-lg);
         margin: 0.5rem 0 0.25rem;
     }
 
-    .ui-editor-content h5 {
+    .ui-editor-content h5,
+    .ui-editor-content.h5,
+    .ui-editor-h5 {
         font-weight: 600;
         font-size: var(--text-base);
         margin: 0.5rem 0 0.2rem;
     }
 
 
-    .ui-editor-content p {
+    .ui-editor-content p,
+    .ui-editor-content.p,
+    .ui-editor-p {
         margin: 0 0 0.5rem;
     }
 
     .ui-editor-content ul,
-    .ui-editor-content ol {
+    .ui-editor-content ol,
+    .ui-editor-content.ul,
+    .ui-editor-content.ol,
+    .ui-editor-ul,
+    .ui-editor-ol {
         margin: 0 0 0.5rem 1.25rem;
     }
 
-    .ui-editor-content blockquote {
+    .ui-editor-content blockquote,
+    .ui-editor-content.blockquote,
+    .ui-editor-blockquote {
         margin: 0.5rem 0;
         padding-left: 0.75rem;
         border-left: 3px solid var(--color-primary-400);
@@ -150,7 +182,9 @@
         font-style: italic;
     }
 
-    .ui-editor-content a {
+    .ui-editor-content a,
+    .ui-editor-content.a,
+    .ui-editor-a {
         color: var(--color-blue-600);
         text-decoration: underline;
         cursor: pointer;
@@ -160,7 +194,9 @@
     }
 
     .ui-editor-content ul,
-    .ui-editor-content ol {
+    .ui-editor-content ol,
+    .ui-editor-ul,
+    .ui-editor-ol {
         margin: 0 0 0.5rem 1.25rem;
         padding-left: 0.25rem;
     }
@@ -169,7 +205,8 @@
     .ui-editor-content ul ul,
     .ui-editor-content ul ol,
     .ui-editor-content ol ul,
-    .ui-editor-content ol ol {
+    .ui-editor-content ol ol,
+    .ui-editor-nested-list {
         margin: 0.2rem 0 0 1rem;
         padding-left: 0.25rem;
     }
@@ -179,11 +216,13 @@
         list-style-type: disc;
     }
 
-    .ui-editor-content ul ul {
+    .ui-editor-content ul ul,
+    .ui-editor-nested-list {
         list-style-type: circle;
     }
 
-    .ui-editor-content ul ul ul {
+    .ui-editor-content ul ul ul,
+    .ui-editor-nested-list-3 {
         list-style-type: square;
     }
 

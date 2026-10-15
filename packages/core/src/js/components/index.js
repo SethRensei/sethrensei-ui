@@ -95,9 +95,13 @@ class UIKit {
     }
 
     initUIAlerts(root) {
-        root.querySelectorAll(
-            `.ui-alert[data-dismissible]:not([${UIKit.INIT_ATTR}])`,
-        ).forEach((el) => {
+        const selector =
+            `.ui-alert[data-dismissible]:not([${UIKit.INIT_ATTR}]), ` +
+            `.ui-alert[data-duration]:not([${UIKit.INIT_ATTR}])`;
+        const alerts = [...root.querySelectorAll(selector)];
+        if (root.matches?.(selector)) alerts.unshift(root);
+
+        alerts.forEach((el) => {
             el.setAttribute(UIKit.INIT_ATTR, "1");
             this.register(el, new UIAlert(el));
         });
